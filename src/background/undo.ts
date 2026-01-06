@@ -61,7 +61,11 @@ export async function initUndoStack(): Promise<void> {
   try {
     undoStack = await loadFromStorage();
     isInitialized = true;
-    console.log("[TabFlow] Undo stack initialized:", undoStack.length, "entries");
+    console.log(
+      "[TabFlow] Undo stack initialized:",
+      undoStack.length,
+      "entries"
+    );
   } catch (error) {
     console.error("[TabFlow] Failed to load undo stack:", error);
     undoStack = [];
@@ -93,7 +97,11 @@ function schedulePersist(): void {
   persistTimeout = setTimeout(async () => {
     try {
       await persistToStorage(undoStack);
-      console.log("[TabFlow] Undo stack persisted:", undoStack.length, "entries");
+      console.log(
+        "[TabFlow] Undo stack persisted:",
+        undoStack.length,
+        "entries"
+      );
     } catch (error) {
       console.error("[TabFlow] Failed to persist undo stack:", error);
     }
@@ -209,7 +217,9 @@ export async function pushDeleteSessionUndo(session: Session): Promise<void> {
 /**
  * Push an undo entry for importing data.
  */
-export async function pushImportUndo(previousSessions: Session[]): Promise<void> {
+export async function pushImportUndo(
+  previousSessions: Session[]
+): Promise<void> {
   const entry = createImportUndo(previousSessions);
   await pushUndo(entry);
 }
@@ -283,4 +293,3 @@ export async function undoLastAction(): Promise<UndoEntry | undefined> {
   await executeUndo(entry);
   return entry;
 }
-

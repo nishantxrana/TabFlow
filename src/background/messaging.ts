@@ -29,7 +29,11 @@ import {
   createSession,
   deleteSession,
 } from "@storage/sessions";
-import { exportData, parseImportData, restoreFromBackup } from "@storage/backups";
+import {
+  exportData,
+  parseImportData,
+  restoreFromBackup,
+} from "@storage/backups";
 
 // Background module imports
 import { getCurrentWindowTabs, restoreSessionTabs } from "./tabCapture";
@@ -114,7 +118,13 @@ export async function handleMessage(
         // Push undo entry
         await pushSaveSessionUndo(session.id);
 
-        console.log("[TabFlow] Session saved:", session.id, "with", tabs.length, "tabs");
+        console.log(
+          "[TabFlow] Session saved:",
+          session.id,
+          "with",
+          tabs.length,
+          "tabs"
+        );
         return { success: true, data: session };
       }
 
@@ -135,7 +145,13 @@ export async function handleMessage(
         // Restore tabs from all groups
         const tabsOpened = await restoreSessionTabs(session.groups);
 
-        console.log("[TabFlow] Session restored:", sessionId, "opened", tabsOpened, "tabs");
+        console.log(
+          "[TabFlow] Session restored:",
+          sessionId,
+          "opened",
+          tabsOpened,
+          "tabs"
+        );
         return { success: true, data: { tabsOpened } };
       }
 
@@ -226,7 +242,8 @@ export async function handleMessage(
         } catch (error) {
           return {
             success: false,
-            error: error instanceof Error ? error.message : "Invalid import data",
+            error:
+              error instanceof Error ? error.message : "Invalid import data",
           };
         }
 
@@ -240,7 +257,11 @@ export async function handleMessage(
         // Push undo entry
         await pushImportUndo(previousSessionsCopy);
 
-        console.log("[TabFlow] Data imported:", importBlob.sessions.length, "sessions");
+        console.log(
+          "[TabFlow] Data imported:",
+          importBlob.sessions.length,
+          "sessions"
+        );
         return {
           success: true,
           data: { sessionsImported: importBlob.sessions.length },
@@ -261,11 +282,17 @@ export async function handleMessage(
       // =========================================================================
 
       case MessageAction.TRIGGER_AI_GROUP: {
-        return { success: false, error: "AI grouping not implemented (Phase 2)" };
+        return {
+          success: false,
+          error: "AI grouping not implemented (Phase 2)",
+        };
       }
 
       case MessageAction.APPLY_GROUPING: {
-        return { success: false, error: "AI grouping not implemented (Phase 2)" };
+        return {
+          success: false,
+          error: "AI grouping not implemented (Phase 2)",
+        };
       }
 
       // =========================================================================

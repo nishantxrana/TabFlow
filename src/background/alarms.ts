@@ -10,7 +10,10 @@
  * - All scheduled work goes through this module
  */
 
-import { ALARM_HOURLY_BACKUP, BACKUP_INTERVAL_MINUTES } from "@shared/constants";
+import {
+  ALARM_HOURLY_BACKUP,
+  BACKUP_INTERVAL_MINUTES,
+} from "@shared/constants";
 import { createBackup } from "@storage/backups";
 
 // =============================================================================
@@ -102,4 +105,3 @@ export async function triggerManualBackup(): Promise<void> {
     throw error;
   }
 }
-
