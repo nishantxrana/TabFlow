@@ -2,10 +2,71 @@
  * TabFlow – Message Router
  *
  * Routes incoming messages from popup/options to appropriate handlers.
- * All Chrome API calls and storage operations are handled here.
+ * All Chrome API calls and storage operations are coordinated here.
+ *
+ * Architecture:
+ * - All handlers are async
+ * - All responses follow MessageResponse format
+ * - Errors are caught and returned as { success: false, error: string }
  */
 
-import { MessageAction, type Message, type MessageResponse } from "@shared/messages";
+import {
+  MessageAction,
+  type Message,
+  type MessageResponse,
+  type SaveSessionPayload,
+  type RestoreSessionPayload,
+  type DeleteSessionPayload,
+  type ImportDataPayload,
+} from "@shared/messages";
+import type { Settings } from "@shared/types";
+import { DEFAULT_SETTINGS } from "@shared/types";
+
+// Storage imports
+import {
+  getAllSessions,
+  getSession,
+  createSession,
+  deleteSession,
+} from "@storage/sessions";
+import { exportData, parseImportData, restoreFromBackup } from "@storage/backups";
+
+// Background module imports
+import { getCurrentWindowTabs, restoreSessionTabs } from "./tabCapture";
+import {
+  getUndoStack,
+  undoLastAction,
+  pushSaveSessionUndo,
+  pushDeleteSessionUndo,
+  pushImportUndo,
+} from "./undo";
+
+// =============================================================================
+// Settings Helpers (chrome.storage.local)
+// =============================================================================
+
+/**
+ * Get settings from chrome.storage.local.
+ */
+async function getSettings(): Promise<Settings> {
+  const result = await chrome.storage.local.get("settings");
+  return result.settings || DEFAULT_SETTINGS;
+}
+
+/**
+ * Save settings to chrome.storage.local.
+ */
+async function saveSettings(settings: Settings): Promise<void> {
+  await chrome.storage.local.set({ settings });
+}
+
+/**
+ * Get user tier from chrome.storage.local.
+ */
+async function getTier(): Promise<"free" | "pro"> {
+  const result = await chrome.storage.local.get("tier");
+  return result.tier || "free";
+}
 
 // =============================================================================
 // Message Handler
@@ -21,97 +82,205 @@ export async function handleMessage(
 ): Promise<MessageResponse> {
   const { action, payload } = message;
 
-  console.log("[TabFlow] Received message:", action, payload);
+  console.log("[TabFlow] Received message:", action);
 
-  switch (action) {
-    // =========================================================================
-    // Session Management
-    // =========================================================================
+  try {
+    switch (action) {
+      // =========================================================================
+      // Session Management
+      // =========================================================================
 
-    case MessageAction.GET_SESSIONS:
-      // TODO: Implement - return all sessions from IndexedDB
-      return { success: true, data: [] };
+      case MessageAction.GET_SESSIONS: {
+        const sessions = await getAllSessions();
+        return { success: true, data: sessions };
+      }
 
-    case MessageAction.SAVE_SESSION:
-      // TODO: Implement - capture tabs and save to IndexedDB
-      return { success: false, error: "Not implemented" };
+      case MessageAction.SAVE_SESSION: {
+        const { name } = (payload as SaveSessionPayload) || {};
 
-    case MessageAction.RESTORE_SESSION:
-      // TODO: Implement - open tabs from session
-      return { success: false, error: "Not implemented" };
+        // Capture current tabs
+        const tabs = await getCurrentWindowTabs();
 
-    case MessageAction.DELETE_SESSION:
-      // TODO: Implement - delete session from IndexedDB
-      return { success: false, error: "Not implemented" };
+        if (tabs.length === 0) {
+          return { success: false, error: "No tabs to save" };
+        }
 
-    // =========================================================================
-    // Undo
-    // =========================================================================
+        // Create and save session
+        const session = await createSession(
+          name || `Session ${new Date().toLocaleString()}`,
+          tabs
+        );
 
-    case MessageAction.UNDO:
-      // TODO: Implement - pop and execute undo entry
-      return { success: false, error: "Not implemented" };
+        // Push undo entry
+        await pushSaveSessionUndo(session.id);
 
-    case MessageAction.GET_UNDO_STACK:
-      // TODO: Implement - return current undo stack
-      return { success: true, data: [] };
+        console.log("[TabFlow] Session saved:", session.id, "with", tabs.length, "tabs");
+        return { success: true, data: session };
+      }
 
-    // =========================================================================
-    // Settings
-    // =========================================================================
+      case MessageAction.RESTORE_SESSION: {
+        const { sessionId } = payload as RestoreSessionPayload;
 
-    case MessageAction.GET_SETTINGS:
-      // TODO: Implement - return settings from chrome.storage.local
-      return {
-        success: true,
-        data: {
-          autoBackup: true,
-          backupFrequencyHours: 1,
-          aiOptIn: false,
-        },
-      };
+        if (!sessionId) {
+          return { success: false, error: "Session ID required" };
+        }
 
-    case MessageAction.UPDATE_SETTINGS:
-      // TODO: Implement - save settings to chrome.storage.local
-      return { success: true, data: { success: true } };
+        // Get the session
+        const session = await getSession(sessionId);
 
-    // =========================================================================
-    // Backup
-    // =========================================================================
+        if (!session) {
+          return { success: false, error: "Session not found" };
+        }
 
-    case MessageAction.EXPORT_DATA:
-      // TODO: Implement - export all data as JSON
-      return { success: false, error: "Not implemented" };
+        // Restore tabs from all groups
+        const tabsOpened = await restoreSessionTabs(session.groups);
 
-    case MessageAction.IMPORT_DATA:
-      // TODO: Implement - import data from JSON
-      return { success: false, error: "Not implemented" };
+        console.log("[TabFlow] Session restored:", sessionId, "opened", tabsOpened, "tabs");
+        return { success: true, data: { tabsOpened } };
+      }
 
-    // =========================================================================
-    // Tier
-    // =========================================================================
+      case MessageAction.DELETE_SESSION: {
+        const { sessionId } = payload as DeleteSessionPayload;
 
-    case MessageAction.GET_TIER:
-      // TODO: Implement - return tier from chrome.storage.local
-      return { success: true, data: "free" };
+        if (!sessionId) {
+          return { success: false, error: "Session ID required" };
+        }
 
-    // =========================================================================
-    // AI Grouping (Phase 2)
-    // =========================================================================
+        // Delete the session (returns deleted session for undo)
+        const deletedSession = await deleteSession(sessionId);
 
-    case MessageAction.TRIGGER_AI_GROUP:
-      return { success: false, error: "AI grouping not implemented (Phase 2)" };
+        if (!deletedSession) {
+          return { success: false, error: "Session not found" };
+        }
 
-    case MessageAction.APPLY_GROUPING:
-      return { success: false, error: "AI grouping not implemented (Phase 2)" };
+        // Push undo entry with full session data
+        await pushDeleteSessionUndo(deletedSession);
 
-    // =========================================================================
-    // Unknown Action
-    // =========================================================================
+        console.log("[TabFlow] Session deleted:", sessionId);
+        return { success: true, data: { success: true } };
+      }
 
-    default:
-      console.warn("[TabFlow] Unknown action:", action);
-      return { success: false, error: `Unknown action: ${action}` };
+      // =========================================================================
+      // Undo
+      // =========================================================================
+
+      case MessageAction.UNDO: {
+        const undone = await undoLastAction();
+
+        if (!undone) {
+          return { success: true, data: { undone: null } };
+        }
+
+        console.log("[TabFlow] Undo executed:", undone.type);
+        return { success: true, data: { undone } };
+      }
+
+      case MessageAction.GET_UNDO_STACK: {
+        const stack = await getUndoStack();
+        return { success: true, data: stack };
+      }
+
+      // =========================================================================
+      // Settings
+      // =========================================================================
+
+      case MessageAction.GET_SETTINGS: {
+        const settings = await getSettings();
+        return { success: true, data: settings };
+      }
+
+      case MessageAction.UPDATE_SETTINGS: {
+        const newSettings = payload as Settings;
+
+        if (!newSettings) {
+          return { success: false, error: "Settings required" };
+        }
+
+        await saveSettings(newSettings);
+        console.log("[TabFlow] Settings updated");
+        return { success: true, data: { success: true } };
+      }
+
+      // =========================================================================
+      // Backup / Export / Import
+      // =========================================================================
+
+      case MessageAction.EXPORT_DATA: {
+        const settings = await getSettings();
+        const json = await exportData(settings);
+        console.log("[TabFlow] Data exported");
+        return { success: true, data: json };
+      }
+
+      case MessageAction.IMPORT_DATA: {
+        const { json } = payload as ImportDataPayload;
+
+        if (!json) {
+          return { success: false, error: "JSON data required" };
+        }
+
+        // Parse and validate
+        let importBlob;
+        try {
+          importBlob = parseImportData(json);
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Invalid import data",
+          };
+        }
+
+        // Get current sessions for undo
+        const previousSessions = await getAllSessions();
+
+        // Clear and import
+        const previousSessionsCopy = [...previousSessions];
+        await restoreFromBackup(importBlob);
+
+        // Push undo entry
+        await pushImportUndo(previousSessionsCopy);
+
+        console.log("[TabFlow] Data imported:", importBlob.sessions.length, "sessions");
+        return {
+          success: true,
+          data: { sessionsImported: importBlob.sessions.length },
+        };
+      }
+
+      // =========================================================================
+      // Tier
+      // =========================================================================
+
+      case MessageAction.GET_TIER: {
+        const tier = await getTier();
+        return { success: true, data: tier };
+      }
+
+      // =========================================================================
+      // AI Grouping (Phase 2)
+      // =========================================================================
+
+      case MessageAction.TRIGGER_AI_GROUP: {
+        return { success: false, error: "AI grouping not implemented (Phase 2)" };
+      }
+
+      case MessageAction.APPLY_GROUPING: {
+        return { success: false, error: "AI grouping not implemented (Phase 2)" };
+      }
+
+      // =========================================================================
+      // Unknown Action
+      // =========================================================================
+
+      default:
+        console.warn("[TabFlow] Unknown action:", action);
+        return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (error) {
+    console.error("[TabFlow] Handler error:", action, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
-
