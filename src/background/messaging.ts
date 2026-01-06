@@ -28,6 +28,7 @@ import {
   getSession,
   createSession,
   deleteSession,
+  clearAllSessions,
 } from "@storage/sessions";
 import {
   exportData,
@@ -266,6 +267,24 @@ export async function handleMessage(
           success: true,
           data: { sessionsImported: importBlob.sessions.length },
         };
+      }
+
+      case MessageAction.CLEAR_DATA: {
+        // Get current sessions for undo
+        const sessionsToDelete = await getAllSessions();
+
+        // Clear all sessions
+        await clearAllSessions();
+
+        // Push undo entry so user can recover
+        await pushImportUndo(sessionsToDelete);
+
+        console.log(
+          "[TabFlow] All data cleared:",
+          sessionsToDelete.length,
+          "sessions"
+        );
+        return { success: true, data: { success: true } };
       }
 
       // =========================================================================

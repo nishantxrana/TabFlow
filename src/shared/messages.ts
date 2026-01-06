@@ -35,6 +35,7 @@ export const MessageAction = {
   // Backup
   EXPORT_DATA: "EXPORT_DATA",
   IMPORT_DATA: "IMPORT_DATA",
+  CLEAR_DATA: "CLEAR_DATA",
 
   // Tier
   GET_TIER: "GET_TIER",
@@ -111,6 +112,10 @@ export interface ImportDataResponse {
   sessionsImported: number;
 }
 
+export interface ClearDataResponse {
+  success: true;
+}
+
 // =============================================================================
 // Type-Safe Message Helpers
 // =============================================================================
@@ -130,6 +135,7 @@ export interface MessageResponseMap {
   [MessageAction.UPDATE_SETTINGS]: UpdateSettingsResponse;
   [MessageAction.EXPORT_DATA]: string;
   [MessageAction.IMPORT_DATA]: ImportDataResponse;
+  [MessageAction.CLEAR_DATA]: ClearDataResponse;
   [MessageAction.GET_TIER]: Tier;
   // AI actions (Phase 2)
   [MessageAction.TRIGGER_AI_GROUP]: unknown;
