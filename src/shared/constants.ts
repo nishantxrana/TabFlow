@@ -1,0 +1,66 @@
+/**
+ * TabFlow – Configuration Constants
+ * All magic numbers and config values in one place.
+ */
+
+// =============================================================================
+// IndexedDB Configuration
+// =============================================================================
+
+export const DB_NAME = "tabflow";
+export const DB_VERSION = 1;
+
+// =============================================================================
+// Storage Limits
+// =============================================================================
+
+/** Maximum tabs allowed for free tier */
+export const MAX_TABS_FREE = 100;
+
+/** Maximum tabs allowed for pro tier */
+export const MAX_TABS_PRO = Infinity;
+
+/** Maximum tabs per AI grouping request */
+export const MAX_TABS_PER_AI_REQUEST = 40;
+
+/** Maximum undo history depth */
+export const MAX_UNDO_DEPTH = 10;
+
+/** Maximum backups to retain in IndexedDB */
+export const MAX_BACKUPS_RETAINED = 24;
+
+// =============================================================================
+// Timing Configuration
+// =============================================================================
+
+/** Default backup interval in minutes */
+export const BACKUP_INTERVAL_MINUTES = 60;
+
+/** Debounce delay for undo stack persistence (ms) */
+export const UNDO_PERSIST_DEBOUNCE_MS = 500;
+
+/** Debounce delay for settings save (ms) */
+export const SETTINGS_SAVE_DEBOUNCE_MS = 300;
+
+/** Debounce delay for search input (ms) */
+export const SEARCH_DEBOUNCE_MS = 200;
+
+// =============================================================================
+// UI Configuration
+// =============================================================================
+
+/** Popup width in pixels */
+export const POPUP_WIDTH_PX = 400;
+
+/** Popup max height in pixels */
+export const POPUP_MAX_HEIGHT_PX = 600;
+
+/** Error toast auto-dismiss time (ms) */
+export const ERROR_TOAST_DURATION_MS = 5000;
+
+// =============================================================================
+// Alarm Names
+// =============================================================================
+
+export const ALARM_HOURLY_BACKUP = "hourlyBackup";
+

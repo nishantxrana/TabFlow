@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "TabFlow",
+  "version": "0.1.0",
+  "description": "A local-first, reliability-focused tab manager with optional AI-powered grouping",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TabFlow"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": []
+}
+
