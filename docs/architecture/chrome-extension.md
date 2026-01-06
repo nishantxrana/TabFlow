@@ -9,6 +9,7 @@
 TabFlow uses **Manifest V3** exclusively. This is non-negotiable.
 
 Key implications:
+
 - Background context is a **Service Worker**, not a persistent background page
 - Service worker may be terminated at any time by Chrome; state must be persisted
 - All network requests from the service worker are subject to standard CORS rules
@@ -60,13 +61,13 @@ The service worker is the **authoritative layer** for all Chrome API interaction
 
 ### Responsibilities
 
-| Responsibility | Details |
-|----------------|---------|
-| Tab capture | Read `chrome.tabs` to extract title, URL, domain, favicon, lastAccessed |
-| Storage orchestration | Read/write sessions and groups to IndexedDB |
-| Undo stack | Maintain last 10 reversible actions in memory (persisted to IndexedDB on terminate) |
-| Rule-based grouping | Group tabs by domain or manual rules |
-| AI grouping trigger | Send tab metadata to Azure Function, receive group assignments |
+| Responsibility        | Details                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| Tab capture           | Read `chrome.tabs` to extract title, URL, domain, favicon, lastAccessed             |
+| Storage orchestration | Read/write sessions and groups to IndexedDB                                         |
+| Undo stack            | Maintain last 10 reversible actions in memory (persisted to IndexedDB on terminate) |
+| Rule-based grouping   | Group tabs by domain or manual rules                                                |
+| AI grouping trigger   | Send tab metadata to Azure Function, receive group assignments                      |
 
 ### Constraints
 
@@ -97,21 +98,22 @@ interface Response<T = unknown> {
 
 ### Supported Actions (Examples)
 
-| Action | Direction | Description |
-|--------|-----------|-------------|
-| `GET_SESSIONS` | Popup → SW | Fetch all saved sessions |
-| `SAVE_SESSION` | Popup → SW | Save current tabs as a new session |
-| `RESTORE_SESSION` | Popup → SW | Restore a session (open tabs) |
-| `DELETE_SESSION` | Popup → SW | Delete a session |
-| `TRIGGER_AI_GROUP` | Popup → SW | Initiate AI grouping request |
-| `APPLY_GROUPING` | Popup → SW | Apply previewed grouping |
-| `UNDO` | Popup → SW | Revert last action |
-| `GET_SETTINGS` | Options → SW | Fetch user settings |
-| `UPDATE_SETTINGS` | Options → SW | Update user settings |
+| Action             | Direction    | Description                        |
+| ------------------ | ------------ | ---------------------------------- |
+| `GET_SESSIONS`     | Popup → SW   | Fetch all saved sessions           |
+| `SAVE_SESSION`     | Popup → SW   | Save current tabs as a new session |
+| `RESTORE_SESSION`  | Popup → SW   | Restore a session (open tabs)      |
+| `DELETE_SESSION`   | Popup → SW   | Delete a session                   |
+| `TRIGGER_AI_GROUP` | Popup → SW   | Initiate AI grouping request       |
+| `APPLY_GROUPING`   | Popup → SW   | Apply previewed grouping           |
+| `UNDO`             | Popup → SW   | Revert last action                 |
+| `GET_SETTINGS`     | Options → SW | Fetch user settings                |
+| `UPDATE_SETTINGS`  | Options → SW | Update user settings               |
 
 ### Implementation Pattern
 
 **background/messaging.ts**
+
 ```typescript
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleMessage(message)
@@ -125,10 +127,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 ## React Popup & Options Separation
 
-| Surface | Purpose | Mount Target |
-|---------|---------|--------------|
-| **Popup** | Primary user interface; session/group management, search, AI trigger | `popup.html` |
-| **Options** | Settings, backup config, tier management, export/import | `options.html` |
+| Surface     | Purpose                                                              | Mount Target   |
+| ----------- | -------------------------------------------------------------------- | -------------- |
+| **Popup**   | Primary user interface; session/group management, search, AI trigger | `popup.html`   |
+| **Options** | Settings, backup config, tier management, export/import              | `options.html` |
 
 ### Popup UI Constraints
 
@@ -149,24 +151,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 Used for all core data that must survive extension restarts and browser updates.
 
-| Store | Data |
-|-------|------|
-| `sessions` | Session objects (id, createdAt, groups[]) |
-| `groups` | Group objects (id, name, tabs[]) |
+| Store          | Data                                                            |
+| -------------- | --------------------------------------------------------------- |
+| `sessions`     | Session objects (id, createdAt, groups[])                       |
+| `groups`       | Group objects (id, name, tabs[])                                |
 | `tabSnapshots` | TabSnapshot objects (title, url, domain, favicon, lastAccessed) |
-| `undoStack` | Serialized undo entries (last 10) |
-| `backups` | Timestamped backup blobs |
+| `undoStack`    | Serialized undo entries (last 10)                               |
+| `backups`      | Timestamped backup blobs                                        |
 
 ### chrome.storage.local (Secondary)
 
 Used for lightweight settings and flags that need to be read quickly.
 
-| Key | Data |
-|-----|------|
-| `settings` | User preferences (backup frequency, AI opt-in, etc.) |
-| `tier` | `"free"` or `"pro"` |
-| `backupPointer` | ID of latest backup in IndexedDB |
-| `lastSync` | Timestamp of last cloud sync (future) |
+| Key             | Data                                                 |
+| --------------- | ---------------------------------------------------- |
+| `settings`      | User preferences (backup frequency, AI opt-in, etc.) |
+| `tier`          | `"free"` or `"pro"`                                  |
+| `backupPointer` | ID of latest backup in IndexedDB                     |
+| `lastSync`      | Timestamp of last cloud sync (future)                |
 
 ### Why Two Storage Mechanisms?
 
@@ -177,11 +179,11 @@ Used for lightweight settings and flags that need to be read quickly.
 
 ## Backup Strategy
 
-| Mechanism | Frequency | Storage |
-|-----------|-----------|---------|
-| Auto-backup | Hourly | IndexedDB (`backups` store) |
+| Mechanism     | Frequency | Storage                       |
+| ------------- | --------- | ----------------------------- |
+| Auto-backup   | Hourly    | IndexedDB (`backups` store)   |
 | Manual export | On demand | JSON file (user's filesystem) |
-| Import | On demand | Validated JSON → IndexedDB |
+| Import        | On demand | Validated JSON → IndexedDB    |
 
 ### Undo Stack
 
@@ -206,4 +208,3 @@ Used for lightweight settings and flags that need to be read quickly.
 - [System Overview](./overview.md)
 - [Azure Function Architecture](./azure-function.md)
 - [AI Grouping Architecture](./ai-grouping.md)
-

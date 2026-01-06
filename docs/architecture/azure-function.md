@@ -18,12 +18,12 @@ The Azure Function serves as a **secure, stateless proxy** between the Chrome ex
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Runtime | Azure Functions (Node.js 18+) |
-| Language | TypeScript |
-| AI Providers | Groq, OpenAI (mini models) |
-| Model Class | 3B–8B parameter LLMs |
+| Component    | Technology                    |
+| ------------ | ----------------------------- |
+| Runtime      | Azure Functions (Node.js 18+) |
+| Language     | TypeScript                    |
+| AI Providers | Groq, OpenAI (mini models)    |
+| Model Class  | 3B–8B parameter LLMs          |
 
 ---
 
@@ -75,14 +75,14 @@ The Azure Function serves as a **secure, stateless proxy** between the Chrome ex
 
 ```typescript
 interface TabInput {
-  title: string;   // Tab title (max 200 chars, truncated)
-  domain: string;  // Extracted domain (e.g., "github.com")
+  title: string; // Tab title (max 200 chars, truncated)
+  domain: string; // Extracted domain (e.g., "github.com")
 }
 
 interface GroupTabsRequest {
-  tabs: TabInput[];       // Max 40 items
-  userId: string;         // Unique user identifier (extension-generated)
-  tier: "free" | "pro";   // User tier
+  tabs: TabInput[]; // Max 40 items
+  userId: string; // Unique user identifier (extension-generated)
+  tier: "free" | "pro"; // User tier
 }
 ```
 
@@ -92,13 +92,13 @@ interface GroupTabsRequest {
 
 ```typescript
 interface GroupAssignment {
-  groupName: string;      // AI-generated group label
-  tabIndices: number[];   // Indices into original tabs[] array
+  groupName: string; // AI-generated group label
+  tabIndices: number[]; // Indices into original tabs[] array
 }
 
 interface GroupingResult {
   groups: GroupAssignment[];
-  ungrouped: number[];    // Tabs that couldn't be classified
+  ungrouped: number[]; // Tabs that couldn't be classified
 }
 ```
 
@@ -106,14 +106,14 @@ interface GroupingResult {
 
 ## Quota & Abuse Prevention
 
-| Control | Value | Rationale |
-|---------|-------|-----------|
-| Max tabs per request | 40 | Bounds token usage per call |
-| Max calls per user/day (Free) | 5 | Limit abuse on free tier |
-| Max calls per user/day (Pro) | 50 | Reasonable Pro usage |
-| Max title length | 200 chars | Prevent token bloat |
-| Manual trigger only | — | No background/automated calls |
-| Hash-based caching | SHA-256 of tab set | Avoid redundant AI calls for identical input |
+| Control                       | Value              | Rationale                                    |
+| ----------------------------- | ------------------ | -------------------------------------------- |
+| Max tabs per request          | 40                 | Bounds token usage per call                  |
+| Max calls per user/day (Free) | 5                  | Limit abuse on free tier                     |
+| Max calls per user/day (Pro)  | 50                 | Reasonable Pro usage                         |
+| Max title length              | 200 chars          | Prevent token bloat                          |
+| Manual trigger only           | —                  | No background/automated calls                |
+| Hash-based caching            | SHA-256 of tab set | Avoid redundant AI calls for identical input |
 
 ### Rate Limit Storage
 
@@ -147,7 +147,7 @@ class OpenAIMiniProvider implements AIProvider { ... }
 ### Prompt Construction
 
 ```
-System: You are a tab organizer. Given a list of browser tabs (title + domain), 
+System: You are a tab organizer. Given a list of browser tabs (title + domain),
 group them by user intent. Return JSON only.
 
 User:
@@ -170,12 +170,12 @@ Output format:
 
 ## Error Handling & Fallbacks
 
-| Scenario | Response |
-|----------|----------|
-| Invalid input schema | 400 Bad Request + validation errors |
-| Quota exceeded | 429 Too Many Requests + reset time |
-| AI provider timeout | 504 Gateway Timeout + retry hint |
-| AI response malformed | 502 Bad Gateway + raw error (logged, not exposed) |
+| Scenario                | Response                                                        |
+| ----------------------- | --------------------------------------------------------------- |
+| Invalid input schema    | 400 Bad Request + validation errors                             |
+| Quota exceeded          | 429 Too Many Requests + reset time                              |
+| AI provider timeout     | 504 Gateway Timeout + retry hint                                |
+| AI response malformed   | 502 Bad Gateway + raw error (logged, not exposed)               |
 | AI provider unavailable | Attempt fallback provider; if all fail, 503 Service Unavailable |
 
 ### Retry Policy
@@ -187,24 +187,24 @@ Output format:
 
 ## Security
 
-| Measure | Implementation |
-|---------|----------------|
-| API keys | Stored in Azure Key Vault; loaded at function startup |
-| HTTPS only | Azure Functions enforce TLS by default |
+| Measure       | Implementation                                                      |
+| ------------- | ------------------------------------------------------------------- |
+| API keys      | Stored in Azure Key Vault; loaded at function startup               |
+| HTTPS only    | Azure Functions enforce TLS by default                              |
 | No PII logged | Tab titles/domains are not persisted; only aggregate metrics logged |
-| CORS | Restrict to extension origin only |
+| CORS          | Restrict to extension origin only                                   |
 
 ---
 
 ## Cost Estimation
 
-| Factor | Estimate |
-|--------|----------|
-| Tokens per request | ~500–1000 (40 tabs × 25 tokens avg) |
-| Cost per 1K tokens (Groq) | ~$0.0001 |
-| Cost per request | ~$0.0001–0.0002 |
-| Daily Pro user (50 calls) | ~$0.01 |
-| 1K daily Pro users | ~$10/day |
+| Factor                    | Estimate                            |
+| ------------------------- | ----------------------------------- |
+| Tokens per request        | ~500–1000 (40 tabs × 25 tokens avg) |
+| Cost per 1K tokens (Groq) | ~$0.0001                            |
+| Cost per request          | ~$0.0001–0.0002                     |
+| Daily Pro user (50 calls) | ~$0.01                              |
+| 1K daily Pro users        | ~$10/day                            |
 
 ---
 
@@ -213,4 +213,3 @@ Output format:
 - [System Overview](./overview.md)
 - [Chrome Extension Architecture](./chrome-extension.md)
 - [AI Grouping Architecture](./ai-grouping.md)
-

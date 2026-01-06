@@ -13,6 +13,7 @@ Manual tab grouping is tedious. Users with 20+ open tabs rarely organize them. T
 - Reduces cognitive load for users with tab overload
 
 AI is **not** used for:
+
 - Reading page content
 - Tracking user behavior
 - Running automatically in the background
@@ -66,18 +67,19 @@ User cancels → no change
 
 ```typescript
 interface TabInput {
-  title: string;   // Max 200 chars
-  domain: string;  // e.g., "github.com"
+  title: string; // Max 200 chars
+  domain: string; // e.g., "github.com"
 }
 
 interface GroupTabsRequest {
-  tabs: TabInput[];       // Max 40 items
-  userId: string;         // Extension-generated unique ID
+  tabs: TabInput[]; // Max 40 items
+  userId: string; // Extension-generated unique ID
   tier: "free" | "pro";
 }
 ```
 
 **What is NOT sent:**
+
 - Full URL (only domain)
 - Page content
 - Browsing history
@@ -87,13 +89,13 @@ interface GroupTabsRequest {
 
 ```typescript
 interface GroupAssignment {
-  groupName: string;      // AI-generated label
-  tabIndices: number[];   // References to input tabs[]
+  groupName: string; // AI-generated label
+  tabIndices: number[]; // References to input tabs[]
 }
 
 interface GroupingResult {
   groups: GroupAssignment[];
-  ungrouped: number[];    // Tabs that couldn't be classified
+  ungrouped: number[]; // Tabs that couldn't be classified
 }
 ```
 
@@ -103,14 +105,15 @@ interface GroupingResult {
 
 ### Why Small Models?
 
-| Factor | Small Model (3B–8B) | Large Model (70B+) |
-|--------|---------------------|---------------------|
-| Latency | 200–500ms | 2–5s |
-| Cost | $0.0001/req | $0.01+/req |
-| Accuracy for tab grouping | Sufficient | Overkill |
-| Self-hosting feasibility | Possible (future) | Impractical |
+| Factor                    | Small Model (3B–8B) | Large Model (70B+) |
+| ------------------------- | ------------------- | ------------------ |
+| Latency                   | 200–500ms           | 2–5s               |
+| Cost                      | $0.0001/req         | $0.01+/req         |
+| Accuracy for tab grouping | Sufficient          | Overkill           |
+| Self-hosting feasibility  | Possible (future)   | Impractical        |
 
 Tab grouping is a **bounded classification task**. Small models perform well because:
+
 - Input is short (title + domain per tab)
 - Output is structured JSON
 - No complex reasoning required
@@ -118,17 +121,17 @@ Tab grouping is a **bounded classification task**. Small models perform well bec
 
 ### Target Models
 
-| Provider | Model | Parameters |
-|----------|-------|------------|
-| Groq | Llama 3 8B | 8B |
-| Groq | Mistral 7B | 7B |
-| OpenAI | GPT-4o-mini | ~8B equivalent |
+| Provider | Model       | Parameters     |
+| -------- | ----------- | -------------- |
+| Groq     | Llama 3 8B  | 8B             |
+| Groq     | Mistral 7B  | 7B             |
+| OpenAI   | GPT-4o-mini | ~8B equivalent |
 
 ### Prompt Design
 
 ```
 System:
-You are a browser tab organizer. Given a list of tabs with title and domain, 
+You are a browser tab organizer. Given a list of tabs with title and domain,
 group them by user intent. Return valid JSON only. Be concise with group names.
 
 User:
@@ -154,16 +157,17 @@ Respond with JSON:
 
 ### AI Request Failures
 
-| Failure Mode | Handling |
-|--------------|----------|
-| Network timeout | Show error toast; offer retry button |
-| Quota exceeded | Show upgrade prompt (Free) or "try again tomorrow" (Pro) |
-| Malformed AI response | Log error; show generic failure message; do not crash |
-| AI provider down | Attempt fallback provider; if all fail, graceful degradation |
+| Failure Mode          | Handling                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| Network timeout       | Show error toast; offer retry button                         |
+| Quota exceeded        | Show upgrade prompt (Free) or "try again tomorrow" (Pro)     |
+| Malformed AI response | Log error; show generic failure message; do not crash        |
+| AI provider down      | Attempt fallback provider; if all fail, graceful degradation |
 
 ### Graceful Degradation
 
 If AI grouping fails entirely:
+
 - Extension remains fully functional
 - Manual grouping still works
 - Saved sessions are unaffected
@@ -172,6 +176,7 @@ If AI grouping fails entirely:
 ### Validation Failures
 
 If the AI returns malformed JSON or invalid schema:
+
 - Azure Function returns 502 with error code
 - Extension shows: "AI couldn't group your tabs. Try again or group manually."
 - No partial groupings are applied
@@ -192,6 +197,7 @@ AI groupings are **never applied automatically**. The flow is:
 6. Undo action is pushed to stack
 
 If user clicks **"Cancel"**:
+
 - No changes are made
 - No undo entry created
 - Request is discarded
@@ -200,26 +206,26 @@ If user clicks **"Cancel"**:
 
 ## Privacy Guarantees
 
-| Guarantee | Implementation |
-|-----------|----------------|
-| No page content sent | Only `document.title` and parsed domain |
-| No URL paths sent | `github.com`, not `github.com/user/repo/pull/42` |
-| No browsing history | Only currently open tabs at request time |
-| No PII | No email, no account info, no cookies |
-| Opt-in only | AI features require explicit user action |
-| Data not stored | Azure Function does not persist tab data |
+| Guarantee            | Implementation                                   |
+| -------------------- | ------------------------------------------------ |
+| No page content sent | Only `document.title` and parsed domain          |
+| No URL paths sent    | `github.com`, not `github.com/user/repo/pull/42` |
+| No browsing history  | Only currently open tabs at request time         |
+| No PII               | No email, no account info, no cookies            |
+| Opt-in only          | AI features require explicit user action         |
+| Data not stored      | Azure Function does not persist tab data         |
 
 ---
 
 ## Cost Controls
 
-| Control | Value |
-|---------|-------|
-| Max tabs per request | 40 |
-| Max requests/day (Free) | 5 |
-| Max requests/day (Pro) | 50 |
-| Cached responses | Hash-based deduplication |
-| Token cap | ~1000 tokens per request |
+| Control                 | Value                    |
+| ----------------------- | ------------------------ |
+| Max tabs per request    | 40                       |
+| Max requests/day (Free) | 5                        |
+| Max requests/day (Pro)  | 50                       |
+| Cached responses        | Hash-based deduplication |
+| Token cap               | ~1000 tokens per request |
 
 ---
 
@@ -238,4 +244,3 @@ These are explicitly **not in scope** for the MVP.
 - [System Overview](./overview.md)
 - [Azure Function Architecture](./azure-function.md)
 - [MVP Scope](../roadmap/mvp.md)
-
