@@ -1,34 +1,25 @@
 {
-  "name": "tabflow",
+  "name": "tabflow-monorepo",
   "version": "0.1.0",
-  "description": "A local-first, reliability-focused tab manager with optional AI-powered grouping",
-  "type": "module",
+  "private": true,
+  "description": "TabFlow - A local-first, reliability-focused tab manager",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint src --ext .ts,.tsx",
-    "type-check": "tsc --noEmit"
+    "extension:dev": "npm run dev --prefix apps/extension",
+    "extension:build": "npm run build --prefix apps/extension",
+    "extension:lint": "npm run lint --prefix apps/extension",
+    "api:build": "npm run build --prefix apps/api",
+    "api:start": "npm run start --prefix apps/api",
+    "api:watch": "npm run watch --prefix apps/api",
+    "build:all": "npm run extension:build && npm run api:build",
+    "install:all": "npm install --prefix apps/extension && npm install --prefix apps/api"
   },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "idb": "^8.0.0"
-  },
-  "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.23",
-    "@types/chrome": "^0.0.260",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.17",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12"
-  }
+  "keywords": [
+    "chrome-extension",
+    "tab-manager",
+    "azure-functions",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT"
 }
 

@@ -12,7 +12,7 @@ build/
 .env.*.local
 
 # IDE / Editor
-.vscode/
+
 .idea/
 *.swp
 *.swo
@@ -40,6 +40,8 @@ yarn-error.log*
 # Azure Functions
 local.settings.json
 .azure/
+bin/
+obj/
 
 # Testing
 coverage/
@@ -49,4 +51,3 @@ coverage/
 tmp/
 temp/
 *.tmp
-
