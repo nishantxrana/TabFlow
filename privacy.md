@@ -10,6 +10,3 @@ TabFlow does not sell, transfer, or share user data with third parties.
 
 Cloud Features:
 Cloud sync and optional features may be introduced in the future. If implemented, this policy will be updated accordingly before release.
-
-Contact:
-For questions, contact: your-email@example.com
