@@ -18,11 +18,13 @@ import {
   persistUndoStack as persistToStorage,
   createSaveSessionUndo,
   createDeleteSessionUndo,
+  createRenameSessionUndo,
   createImportUndo,
 } from "@storage/undoStore";
 import {
   deleteSession as deleteSessionFromStorage,
   saveSession as saveSessionToStorage,
+  updateSession,
   clearAllSessions,
   importSessions,
 } from "@storage/sessions";
@@ -215,6 +217,18 @@ export async function pushDeleteSessionUndo(session: Session): Promise<void> {
 }
 
 /**
+ * Push an undo entry for renaming a session.
+ */
+export async function pushRenameSessionUndo(
+  sessionId: string,
+  oldName: string,
+  newName: string
+): Promise<void> {
+  const entry = createRenameSessionUndo(sessionId, oldName, newName);
+  await pushUndo(entry);
+}
+
+/**
  * Push an undo entry for importing data.
  */
 export async function pushImportUndo(
@@ -250,6 +264,13 @@ export async function executeUndo(entry: UndoEntry): Promise<UndoEntry> {
       // Undo delete = restore the session
       const data = entry.data as { session: Session };
       await saveSessionToStorage(data.session);
+      break;
+    }
+
+    case "RENAME_SESSION": {
+      // Undo rename = restore old name
+      const data = entry.data as { sessionId: string; oldName: string };
+      await updateSession(data.sessionId, { name: data.oldName });
       break;
     }
 

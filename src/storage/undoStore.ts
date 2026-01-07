@@ -74,7 +74,7 @@ export async function peekUndoStack(): Promise<UndoEntry | undefined> {
     const tx = db.transaction("undoStack", "readonly");
 
     // Open cursor in reverse to get the last entry
-    let cursor = await tx.store.openCursor(null, "prev");
+    const cursor = await tx.store.openCursor(null, "prev");
     const entry = cursor?.value;
 
     await tx.done;
@@ -132,7 +132,7 @@ export async function popUndoEntry(): Promise<UndoEntry | undefined> {
     const tx = db.transaction("undoStack", "readwrite");
 
     // Open cursor in reverse to get the last entry
-    let cursor = await tx.store.openCursor(null, "prev");
+    const cursor = await tx.store.openCursor(null, "prev");
 
     if (!cursor) {
       await tx.done;
@@ -213,6 +213,21 @@ export function createDeleteSessionUndo(
     type: "DELETE_SESSION",
     timestamp: Date.now(),
     data: { session },
+  };
+}
+
+/**
+ * Create a typed undo entry for renaming a session.
+ */
+export function createRenameSessionUndo(
+  sessionId: string,
+  oldName: string,
+  newName: string
+): UndoEntry {
+  return {
+    type: "RENAME_SESSION",
+    timestamp: Date.now(),
+    data: { sessionId, oldName, newName },
   };
 }
 

@@ -19,6 +19,7 @@ export const MessageAction = {
   SAVE_SESSION: "SAVE_SESSION",
   RESTORE_SESSION: "RESTORE_SESSION",
   DELETE_SESSION: "DELETE_SESSION",
+  RENAME_SESSION: "RENAME_SESSION",
 
   // Grouping (AI - Phase 2)
   TRIGGER_AI_GROUP: "TRIGGER_AI_GROUP",
@@ -84,6 +85,11 @@ export interface DeleteSessionPayload {
   sessionId: string;
 }
 
+export interface RenameSessionPayload {
+  sessionId: string;
+  newName: string;
+}
+
 export interface ImportDataPayload {
   json: string;
 }
@@ -98,6 +104,10 @@ export interface RestoreSessionResponse {
 
 export interface DeleteSessionResponse {
   success: true;
+}
+
+export interface RenameSessionResponse {
+  session: Session;
 }
 
 export interface UndoResponse {
@@ -129,6 +139,7 @@ export interface MessageResponseMap {
   [MessageAction.SAVE_SESSION]: Session;
   [MessageAction.RESTORE_SESSION]: RestoreSessionResponse;
   [MessageAction.DELETE_SESSION]: DeleteSessionResponse;
+  [MessageAction.RENAME_SESSION]: RenameSessionResponse;
   [MessageAction.UNDO]: UndoResponse;
   [MessageAction.GET_UNDO_STACK]: UndoEntry[];
   [MessageAction.GET_SETTINGS]: Settings;

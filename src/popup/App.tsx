@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useCallback } from "react";
+import type { Session } from "@shared/types";
 import { MessageAction } from "@shared/messages";
 import { sendMessage } from "./hooks/useMessage";
 import { useSessions } from "./hooks/useSessions";
@@ -30,6 +31,7 @@ const App: React.FC = () => {
   const [undoing, setUndoing] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
   const [undoCount, setUndoCount] = useState(0);
 
   // Modal state
@@ -94,6 +96,8 @@ const App: React.FC = () => {
             ? "Save"
             : result.undone.type === "DELETE_SESSION"
             ? "Delete"
+            : result.undone.type === "RENAME_SESSION"
+            ? "Rename"
             : result.undone.type === "IMPORT"
             ? "Import"
             : "Action";
@@ -146,6 +150,46 @@ const App: React.FC = () => {
       setDeletingId(null);
     }
   }, [deleteSessionId, refetch]);
+
+  // Handle rename session
+  const handleRename = useCallback(
+    async (sessionId: string, newName: string) => {
+      setRenamingId(sessionId);
+      setError(null);
+
+      try {
+        await sendMessage(MessageAction.RENAME_SESSION, { sessionId, newName });
+        await refetch();
+        setUndoCount((c) => Math.min(c + 1, 10));
+        setSuccess("Session renamed");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to rename session");
+      } finally {
+        setRenamingId(null);
+      }
+    },
+    [refetch]
+  );
+
+  // Handle copy links (clipboard write in popup context)
+  const handleCopyLinks = useCallback(async (session: Session) => {
+    try {
+      // Collect all URLs from all groups
+      const urls = session.groups
+        .flatMap((group) => group.tabs)
+        .map((tab) => tab.url)
+        .join("\n");
+
+      // Write to clipboard (popup has clipboard access)
+      await navigator.clipboard.writeText(urls);
+
+      const tabCount = session.groups.reduce((sum, g) => sum + g.tabs.length, 0);
+      setSuccess(`Copied ${tabCount} link${tabCount !== 1 ? "s" : ""}`);
+    } catch (err) {
+      setError("Failed to copy links");
+      console.error("[TabFlow] Clipboard write failed:", err);
+    }
+  }, []);
 
   // Handle search
   const handleSearch = useCallback((query: string) => {
@@ -221,8 +265,11 @@ const App: React.FC = () => {
             searchQuery={searchQuery}
             onRestore={handleRestore}
             onDelete={handleDeleteClick}
+            onRename={handleRename}
+            onCopyLinks={handleCopyLinks}
             restoringId={restoringId}
             deletingId={deletingId}
+            renamingId={renamingId}
           />
         )}
       </main>

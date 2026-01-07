@@ -48,6 +48,7 @@ export interface Session {
 export type UndoEntryType =
   | "SAVE_SESSION"
   | "DELETE_SESSION"
+  | "RENAME_SESSION"
   | "APPLY_GROUPING"
   | "IMPORT";
 
@@ -77,6 +78,18 @@ export interface DeleteSessionUndo extends UndoEntry {
   type: "DELETE_SESSION";
   data: {
     session: Session;
+  };
+}
+
+/**
+ * Undo entry for renaming a session.
+ */
+export interface RenameSessionUndo extends UndoEntry {
+  type: "RENAME_SESSION";
+  data: {
+    sessionId: string;
+    oldName: string;
+    newName: string;
   };
 }
 

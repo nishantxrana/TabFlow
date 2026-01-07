@@ -17,10 +17,12 @@ import {
   type SaveSessionPayload,
   type RestoreSessionPayload,
   type DeleteSessionPayload,
+  type RenameSessionPayload,
   type ImportDataPayload,
 } from "@shared/messages";
 import type { Settings } from "@shared/types";
 import { DEFAULT_SETTINGS } from "@shared/types";
+import { MAX_SESSION_NAME_LENGTH } from "@shared/constants";
 
 // Storage imports
 import {
@@ -28,6 +30,7 @@ import {
   getSession,
   createSession,
   deleteSession,
+  updateSession,
   clearAllSessions,
 } from "@storage/sessions";
 import {
@@ -43,6 +46,7 @@ import {
   undoLastAction,
   pushSaveSessionUndo,
   pushDeleteSessionUndo,
+  pushRenameSessionUndo,
   pushImportUndo,
 } from "./undo";
 
@@ -175,6 +179,51 @@ export async function handleMessage(
 
         console.log("[TabFlow] Session deleted:", sessionId);
         return { success: true, data: { success: true } };
+      }
+
+      case MessageAction.RENAME_SESSION: {
+        const { sessionId, newName } = payload as RenameSessionPayload;
+
+        if (!sessionId) {
+          return { success: false, error: "Session ID required" };
+        }
+
+        if (!newName || newName.trim().length === 0) {
+          return { success: false, error: "New name required" };
+        }
+
+        // Enforce max length
+        const trimmedName = newName.trim().slice(0, MAX_SESSION_NAME_LENGTH);
+
+        // Get current session to capture old name for undo
+        const currentSession = await getSession(sessionId);
+        if (!currentSession) {
+          return { success: false, error: "Session not found" };
+        }
+
+        const oldName = currentSession.name;
+
+        // Skip if name hasn't changed
+        if (oldName === trimmedName) {
+          return { success: true, data: { session: currentSession } };
+        }
+
+        // Update session name
+        const updatedSession = await updateSession(sessionId, {
+          name: trimmedName,
+        });
+
+        // Push undo entry
+        await pushRenameSessionUndo(sessionId, oldName, trimmedName);
+
+        console.log(
+          "[TabFlow] Session renamed:",
+          sessionId,
+          oldName,
+          "->",
+          trimmedName
+        );
+        return { success: true, data: { session: updatedSession } };
       }
 
       // =========================================================================

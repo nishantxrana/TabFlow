@@ -32,7 +32,7 @@ export async function getLatestBackup(): Promise<BackupBlob | undefined> {
     const tx = db.transaction("backups", "readonly");
 
     // Open cursor in reverse (newest first) and get first entry
-    let cursor = await tx.store.openCursor(null, "prev");
+    const cursor = await tx.store.openCursor(null, "prev");
     const backup = cursor?.value;
 
     await tx.done;

@@ -13,8 +13,11 @@ interface SessionListProps {
   searchQuery?: string;
   onRestore: (sessionId: string) => void;
   onDelete: (sessionId: string) => void;
+  onRename: (sessionId: string, newName: string) => void;
+  onCopyLinks: (session: Session) => void;
   restoringId: string | null;
   deletingId: string | null;
+  renamingId: string | null;
 }
 
 export const SessionList: React.FC<SessionListProps> = ({
@@ -22,8 +25,11 @@ export const SessionList: React.FC<SessionListProps> = ({
   searchQuery = "",
   onRestore,
   onDelete,
+  onRename,
+  onCopyLinks,
   restoringId,
   deletingId,
+  renamingId,
 }) => {
   // Filter sessions by search query (check if any tabs match)
   const filteredSessions = searchQuery
@@ -100,8 +106,11 @@ export const SessionList: React.FC<SessionListProps> = ({
           searchQuery={searchQuery}
           onRestore={onRestore}
           onDelete={onDelete}
+          onRename={onRename}
+          onCopyLinks={onCopyLinks}
           restoring={restoringId === session.id}
           deleting={deletingId === session.id}
+          renaming={renamingId === session.id}
         />
       ))}
     </div>
@@ -109,4 +118,3 @@ export const SessionList: React.FC<SessionListProps> = ({
 };
 
 export default SessionList;
-
