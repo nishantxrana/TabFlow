@@ -34,10 +34,31 @@ export interface UploadResult {
 export interface StorageError {
   success: false;
   error: string;
-  code: "CONFIG_ERROR" | "UPLOAD_FAILED" | "CONTAINER_ERROR";
+  code: "CONFIG_ERROR" | "UPLOAD_FAILED" | "DOWNLOAD_FAILED" | "CONTAINER_ERROR";
 }
 
 export type UploadBlobResult = UploadResult | StorageError;
+
+export interface DownloadResult {
+  success: true;
+  found: true;
+  payload: string;
+  schemaVersion: number;
+  lastSyncedAt: string;
+}
+
+export interface DownloadNotFound {
+  success: true;
+  found: false;
+}
+
+export interface DownloadError {
+  success: false;
+  error: string;
+  code: "CONFIG_ERROR" | "DOWNLOAD_FAILED";
+}
+
+export type DownloadBlobResult = DownloadResult | DownloadNotFound | DownloadError;
 
 // =============================================================================
 // Configuration
@@ -182,5 +203,93 @@ export async function hasSyncBlob(userId: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Download encrypted sync data for a user.
+ *
+ * - Returns the payload exactly as stored (opaque)
+ * - Does NOT decrypt or inspect payload
+ * - Returns { found: false } if blob doesn't exist
+ *
+ * @param userId - Internal user ID (derived from auth)
+ */
+export async function downloadSyncBlob(
+  userId: string
+): Promise<DownloadBlobResult> {
+  try {
+    const blobServiceClient = getBlobServiceClient();
+    const { containerName } = getStorageConfig();
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    // Check if container exists first
+    const containerExists = await containerClient.exists();
+    if (!containerExists) {
+      console.log(`[Storage] Container does not exist for user ${userId.substring(0, 8)}...`);
+      return { success: true, found: false };
+    }
+
+    const blobPath = getUserBlobPath(userId);
+    const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
+
+    // Check if blob exists
+    const exists = await blockBlobClient.exists();
+    if (!exists) {
+      console.log(`[Storage] No sync data for user ${userId.substring(0, 8)}...`);
+      return { success: true, found: false };
+    }
+
+    // Download blob content
+    const downloadResponse = await blockBlobClient.download(0);
+    const downloadedContent = await streamToString(downloadResponse.readableStreamBody);
+
+    // Parse stored blob (but DO NOT log payload)
+    const blobData: SyncBlob = JSON.parse(downloadedContent);
+
+    // Get last modified timestamp
+    const properties = await blockBlobClient.getProperties();
+    const lastSyncedAt = properties.lastModified?.toISOString() || new Date().toISOString();
+
+    console.log(`[Storage] Blob downloaded for user ${userId.substring(0, 8)}... (synced at ${lastSyncedAt})`);
+
+    return {
+      success: true,
+      found: true,
+      payload: blobData.payload,
+      schemaVersion: blobData.schemaVersion,
+      lastSyncedAt,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Storage] Download failed:", message);
+
+    return {
+      success: false,
+      error: "Failed to download sync data",
+      code: "DOWNLOAD_FAILED",
+    };
+  }
+}
+
+/**
+ * Helper to convert a readable stream to string.
+ */
+async function streamToString(
+  readableStream: NodeJS.ReadableStream | undefined
+): Promise<string> {
+  if (!readableStream) {
+    return "";
+  }
+
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    readableStream.on("data", (data) => {
+      chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data));
+    });
+    readableStream.on("end", () => {
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    readableStream.on("error", reject);
+  });
 }
 
