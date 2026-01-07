@@ -9,11 +9,10 @@
 
 // Import function modules to register them
 import "./functions/authGoogle";
+import "./functions/syncUpload";
 
 // Future functions will be imported here:
-// import "./functions/syncPush";
-// import "./functions/syncPull";
+// import "./functions/syncDownload";
 // import "./functions/aiGroup";
 
 console.log("[TabFlow API] Functions registered");
-
