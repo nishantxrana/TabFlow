@@ -67,3 +67,16 @@ export const MAX_SESSION_NAME_LENGTH = 50;
 
 export const ALARM_HOURLY_BACKUP = "hourlyBackup";
 
+// =============================================================================
+// Cloud Sync Configuration
+// =============================================================================
+
+/** Cloud sync API base URL (change for production) */
+export const CLOUD_API_BASE_URL = "http://localhost:3000";
+
+/** Cloud sync schema version */
+export const CLOUD_SYNC_SCHEMA_VERSION = 1;
+
+/** Encryption key derivation salt (must match across sessions) */
+export const ENCRYPTION_SALT = "tabflow-v1";
+

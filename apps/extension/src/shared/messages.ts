@@ -40,6 +40,10 @@ export const MessageAction = {
 
   // Tier
   GET_TIER: "GET_TIER",
+
+  // Cloud Sync
+  CLOUD_UPLOAD: "CLOUD_UPLOAD",
+  CLOUD_DOWNLOAD: "CLOUD_DOWNLOAD",
 } as const;
 
 export type MessageActionType = (typeof MessageAction)[keyof typeof MessageAction];
@@ -126,6 +130,17 @@ export interface ClearDataResponse {
   success: true;
 }
 
+// Cloud Sync Response Types
+export interface CloudUploadResponse {
+  syncedAt: string;
+}
+
+export interface CloudDownloadResponse {
+  found: boolean;
+  sessions?: Session[];
+  lastSyncedAt?: string;
+}
+
 // =============================================================================
 // Type-Safe Message Helpers
 // =============================================================================
@@ -151,5 +166,8 @@ export interface MessageResponseMap {
   // AI actions (Phase 2)
   [MessageAction.TRIGGER_AI_GROUP]: unknown;
   [MessageAction.APPLY_GROUPING]: Session;
+  // Cloud Sync
+  [MessageAction.CLOUD_UPLOAD]: CloudUploadResponse;
+  [MessageAction.CLOUD_DOWNLOAD]: CloudDownloadResponse;
 }
 

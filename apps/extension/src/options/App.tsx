@@ -11,6 +11,9 @@ import { sendMessage } from "./hooks/useMessage";
 import { useSettings } from "./hooks/useSettings";
 import { Toggle, Toast, ConfirmDialog } from "./components";
 
+// Cloud sync status type
+type CloudSyncStatus = "idle" | "uploading" | "downloading" | "success" | "error";
+
 const App: React.FC = () => {
   // Settings from hook
   const { settings, tier, loading, updateSettings } = useSettings();
@@ -20,6 +23,11 @@ const App: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+  // Cloud sync state
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("idle");
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{
@@ -158,6 +166,74 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Handle cloud upload
+  const handleCloudUpload = useCallback(async () => {
+    setCloudSyncStatus("uploading");
+    try {
+      const result = await sendMessage(MessageAction.CLOUD_UPLOAD);
+      setLastSyncedAt(result.syncedAt);
+      setCloudSyncStatus("success");
+      setToast({ message: "Uploaded to cloud successfully", type: "success" });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } catch (err) {
+      setCloudSyncStatus("error");
+      setToast({
+        message: err instanceof Error ? err.message : "Upload failed",
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    }
+  }, []);
+
+  // Handle cloud download (first step - check for data)
+  const handleCloudDownload = useCallback(async () => {
+    setCloudSyncStatus("downloading");
+    try {
+      const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD);
+
+      if (!result.found) {
+        setCloudSyncStatus("idle");
+        setToast({ message: "No cloud backup found", type: "error" });
+        return;
+      }
+
+      // Data found and already applied (with undo support)
+      setLastSyncedAt(result.lastSyncedAt || null);
+      setCloudSyncStatus("success");
+      setToast({
+        message: `Restored ${result.sessions?.length || 0} sessions from cloud. You can undo this in the popup.`,
+        type: "success",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } catch (err) {
+      setCloudSyncStatus("error");
+      setToast({
+        message: err instanceof Error ? err.message : "Download failed",
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    }
+  }, []);
+
+  // Handle restore confirmation
+  const handleRestoreConfirm = useCallback(async () => {
+    setShowRestoreConfirm(false);
+    await handleCloudDownload();
+  }, [handleCloudDownload]);
+
+  // Prompt for restore confirmation
+  const handleRestoreClick = useCallback(() => {
+    setShowRestoreConfirm(true);
+  }, []);
+
   // Tier display
   const tierLabel = tier === "pro" ? "Pro" : "Free";
   const tierBadgeClass =
@@ -223,10 +299,150 @@ const App: React.FC = () => {
               </div>
             </section>
 
+            {/* Cloud Sync */}
+            <section className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Cloud Sync
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Manually sync your sessions to the cloud. Your data is encrypted before upload.
+              </p>
+
+              {/* Sync Status */}
+              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    cloudSyncStatus === "idle"
+                      ? "bg-gray-400"
+                      : cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"
+                      ? "bg-yellow-400 animate-pulse"
+                      : cloudSyncStatus === "success"
+                      ? "bg-green-400"
+                      : "bg-red-400"
+                  }`}
+                />
+                <span className="text-sm text-gray-600">
+                  {cloudSyncStatus === "idle" && "Ready to sync"}
+                  {cloudSyncStatus === "uploading" && "Uploading..."}
+                  {cloudSyncStatus === "downloading" && "Restoring..."}
+                  {cloudSyncStatus === "success" && "Sync successful"}
+                  {cloudSyncStatus === "error" && "Sync failed"}
+                </span>
+                {lastSyncedAt && cloudSyncStatus === "idle" && (
+                  <span className="text-xs text-gray-400 ml-auto">
+                    Last synced: {new Date(lastSyncedAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+
+              {/* Sync Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCloudUpload}
+                  disabled={cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cloudSyncStatus === "uploading" ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      Upload to Cloud
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleRestoreClick}
+                  disabled={cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cloudSyncStatus === "downloading" ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Restoring...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                        />
+                      </svg>
+                      Restore from Cloud
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-400 mt-3">
+                ⚠️ Restore will replace all local sessions. You can undo this action.
+              </p>
+            </section>
+
             {/* Backup Settings */}
             <section className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Backup Settings
+                Local Backup Settings
               </h2>
 
               {/* Auto Backup Toggle */}
@@ -434,6 +650,19 @@ const App: React.FC = () => {
           </>
         )}
       </main>
+
+      {/* Restore from Cloud Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showRestoreConfirm}
+        title="Restore from Cloud?"
+        message="This will replace all your local sessions with data from the cloud. Your current sessions will be backed up and you can undo this action."
+        confirmLabel="Restore"
+        cancelLabel="Cancel"
+        variant="warning"
+        onConfirm={handleRestoreConfirm}
+        onCancel={() => setShowRestoreConfirm(false)}
+        loading={cloudSyncStatus === "downloading"}
+      />
 
       {/* Clear Confirmation Dialog */}
       <ConfirmDialog

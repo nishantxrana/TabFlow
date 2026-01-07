@@ -49,6 +49,11 @@ import {
   pushRenameSessionUndo,
   pushImportUndo,
 } from "./undo";
+import {
+  handleCloudUpload,
+  handleCloudDownload,
+  applyCloudDownload,
+} from "./cloudSync";
 
 // =============================================================================
 // Settings Helpers (chrome.storage.local)
@@ -343,6 +348,66 @@ export async function handleMessage(
       case MessageAction.GET_TIER: {
         const tier = await getTier();
         return { success: true, data: tier };
+      }
+
+      // =========================================================================
+      // Cloud Sync
+      // =========================================================================
+
+      case MessageAction.CLOUD_UPLOAD: {
+        const result = await handleCloudUpload();
+
+        if (!result.success) {
+          return { success: false, error: result.error };
+        }
+
+        console.log("[TabFlow] Cloud upload successful:", result.syncedAt);
+        return {
+          success: true,
+          data: { syncedAt: result.syncedAt },
+        };
+      }
+
+      case MessageAction.CLOUD_DOWNLOAD: {
+        const result = await handleCloudDownload();
+
+        if (!result.success) {
+          return { success: false, error: result.error };
+        }
+
+        if (!result.found) {
+          console.log("[TabFlow] No cloud backup found");
+          return {
+            success: true,
+            data: { found: false },
+          };
+        }
+
+        // Return sessions for UI to confirm before applying
+        // UI will call IMPORT_DATA or a separate apply action
+        console.log(
+          "[TabFlow] Cloud download successful:",
+          result.sessions.length,
+          "sessions"
+        );
+
+        // Get current sessions for undo before applying
+        const previousSessions = await getAllSessions();
+
+        // Apply the downloaded sessions
+        await applyCloudDownload(result.sessions);
+
+        // Push undo entry so user can recover
+        await pushImportUndo(previousSessions);
+
+        return {
+          success: true,
+          data: {
+            found: true,
+            sessions: result.sessions,
+            lastSyncedAt: result.lastSyncedAt,
+          },
+        };
       }
 
       // =========================================================================
