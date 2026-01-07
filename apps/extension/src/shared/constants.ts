@@ -71,8 +71,17 @@ export const ALARM_HOURLY_BACKUP = "hourlyBackup";
 // Cloud Sync Configuration
 // =============================================================================
 
-/** Cloud sync API base URL (change for production) */
-export const CLOUD_API_BASE_URL = "http://localhost:3000";
+/**
+ * Cloud sync API base URL.
+ *
+ * Uses Vite environment variable:
+ * - Development: Set VITE_CLOUD_API_URL in .env.development
+ * - Production: Set VITE_CLOUD_API_URL in .env.production
+ *
+ * Fallback to localhost for local development.
+ */
+export const CLOUD_API_BASE_URL =
+  import.meta.env.VITE_CLOUD_API_URL || "http://localhost:3000";
 
 /** Cloud sync schema version */
 export const CLOUD_SYNC_SCHEMA_VERSION = 1;

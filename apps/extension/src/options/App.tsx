@@ -12,7 +12,7 @@ import { useSettings } from "./hooks/useSettings";
 import { Toggle, Toast, ConfirmDialog } from "./components";
 
 // Cloud sync status type
-type CloudSyncStatus = "idle" | "uploading" | "downloading" | "success" | "error";
+type CloudSyncStatus = "idle" | "authenticating" | "uploading" | "downloading" | "success" | "error";
 
 const App: React.FC = () => {
   // Settings from hook
@@ -176,8 +176,9 @@ const App: React.FC = () => {
 
   // Handle cloud upload
   const handleCloudUpload = useCallback(async () => {
-    setCloudSyncStatus("uploading");
+    setCloudSyncStatus("authenticating");
     try {
+      setCloudSyncStatus("uploading");
       const result = await sendMessage(MessageAction.CLOUD_UPLOAD);
       setLastSyncedAt(result.syncedAt);
       setCloudSyncStatus("success");
@@ -187,8 +188,14 @@ const App: React.FC = () => {
       setTimeout(() => setCloudSyncStatus("idle"), 3000);
     } catch (err) {
       setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Upload failed";
+      // Check if it's an auth-related error
+      const isAuthError = message.includes("Sign-in") || 
+                          message.includes("cancelled") || 
+                          message.includes("Session expired") ||
+                          message.includes("Authentication");
       setToast({
-        message: err instanceof Error ? err.message : "Upload failed",
+        message: isAuthError ? message : "Upload failed. Please try again.",
         type: "error",
       });
 
@@ -199,8 +206,9 @@ const App: React.FC = () => {
 
   // Handle cloud download preview (first step - fetch and preview only)
   const handleCloudDownloadPreview = useCallback(async () => {
-    setCloudSyncStatus("downloading");
+    setCloudSyncStatus("authenticating");
     try {
+      setCloudSyncStatus("downloading");
       const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD_PREVIEW);
 
       if (!result.found) {
@@ -215,8 +223,14 @@ const App: React.FC = () => {
       setCloudSyncStatus("idle");
     } catch (err) {
       setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Download failed";
+      // Check if it's an auth-related error
+      const isAuthError = message.includes("Sign-in") || 
+                          message.includes("cancelled") || 
+                          message.includes("Session expired") ||
+                          message.includes("Authentication");
       setToast({
-        message: err instanceof Error ? err.message : "Download failed",
+        message: isAuthError ? message : "Download failed. Please try again.",
         type: "error",
       });
 
@@ -249,8 +263,9 @@ const App: React.FC = () => {
       setTimeout(() => setCloudSyncStatus("idle"), 3000);
     } catch (err) {
       setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Restore failed";
       setToast({
-        message: err instanceof Error ? err.message : "Restore failed",
+        message,
         type: "error",
       });
 
@@ -354,6 +369,8 @@ const App: React.FC = () => {
                   className={`w-2 h-2 rounded-full ${
                     cloudSyncStatus === "idle"
                       ? "bg-gray-400"
+                      : cloudSyncStatus === "authenticating"
+                      ? "bg-blue-400 animate-pulse"
                       : cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"
                       ? "bg-yellow-400 animate-pulse"
                       : cloudSyncStatus === "success"
@@ -363,6 +380,7 @@ const App: React.FC = () => {
                 />
                 <span className="text-sm text-gray-600">
                   {cloudSyncStatus === "idle" && "Ready to sync"}
+                  {cloudSyncStatus === "authenticating" && "Signing in..."}
                   {cloudSyncStatus === "uploading" && "Uploading..."}
                   {cloudSyncStatus === "downloading" && "Restoring..."}
                   {cloudSyncStatus === "success" && "Sync successful"}
@@ -379,10 +397,10 @@ const App: React.FC = () => {
               <div className="flex gap-3">
                 <button
                   onClick={handleCloudUpload}
-                  disabled={cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  disabled={cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
                   className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {cloudSyncStatus === "uploading" ? (
+                  {cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" ? (
                     <>
                       <svg
                         className="animate-spin h-4 w-4"
@@ -403,7 +421,7 @@ const App: React.FC = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                         />
                       </svg>
-                      Uploading...
+                      {cloudSyncStatus === "authenticating" ? "Signing in..." : "Uploading..."}
                     </>
                   ) : (
                     <>
@@ -427,10 +445,10 @@ const App: React.FC = () => {
 
                 <button
                   onClick={handleRestoreClick}
-                  disabled={cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  disabled={cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
                   className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {cloudSyncStatus === "downloading" ? (
+                  {cloudSyncStatus === "authenticating" || cloudSyncStatus === "downloading" ? (
                     <>
                       <svg
                         className="animate-spin h-4 w-4"
@@ -451,7 +469,7 @@ const App: React.FC = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                         />
                       </svg>
-                      Restoring...
+                      {cloudSyncStatus === "authenticating" ? "Signing in..." : "Restoring..."}
                     </>
                   ) : (
                     <>

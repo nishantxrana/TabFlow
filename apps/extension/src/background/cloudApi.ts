@@ -2,15 +2,20 @@
  * TabFlow – Cloud API Client
  *
  * Handles communication with the TabFlow cloud backend.
- * Abstracted auth layer allows swapping dev mode for Google auth later.
+ * Uses Google authentication via chrome.identity.
  *
  * Architecture:
- * - Auth provider abstraction (currently dev mode, later Google)
+ * - All auth handled via auth.ts utility
  * - All requests go through this module
  * - No direct fetch calls from other modules
+ *
+ * Security:
+ * - Never logs tokens or sensitive data
+ * - Handles auth errors explicitly
  */
 
 import { CLOUD_API_BASE_URL } from "@shared/constants";
+import { getAuthHeaders, clearAuthToken } from "./auth";
 
 // =============================================================================
 // Types
@@ -39,56 +44,21 @@ export interface CloudApiError {
 }
 
 // =============================================================================
-// Auth Provider Abstraction
+// Custom Errors
 // =============================================================================
 
 /**
- * Auth provider interface.
- * Allows swapping between dev mode and Google auth.
+ * Error thrown when authentication fails.
  */
-interface AuthProvider {
-  getAuthHeaders(): Promise<Record<string, string>>;
-}
+export class AuthenticationError extends Error {
+  code: string;
 
-/**
- * Dev mode auth provider.
- * Uses X-DEV-USER-ID header for local testing.
- *
- * TODO: Replace with GoogleAuthProvider when implementing real auth.
- */
-class DevAuthProvider implements AuthProvider {
-  private userId: string;
-
-  constructor(userId: string = "extension-dev-user") {
-    this.userId = userId;
-  }
-
-  async getAuthHeaders(): Promise<Record<string, string>> {
-    return {
-      "X-DEV-USER-ID": this.userId,
-    };
+  constructor(message: string, code: string = "AUTH_FAILED") {
+    super(message);
+    this.name = "AuthenticationError";
+    this.code = code;
   }
 }
-
-/**
- * Google auth provider (placeholder).
- * Will use chrome.identity to get Google ID token.
- *
- * TODO: Implement when adding Google sign-in.
- */
-// class GoogleAuthProvider implements AuthProvider {
-//   async getAuthHeaders(): Promise<Record<string, string>> {
-//     // Use chrome.identity.getAuthToken() to get Google token
-//     // Then return Authorization: Bearer <token>
-//     const token = await chrome.identity.getAuthToken({ interactive: true });
-//     return {
-//       "Authorization": `Bearer ${token.token}`,
-//     };
-//   }
-// }
-
-// Current auth provider (swap this when implementing Google auth)
-const authProvider: AuthProvider = new DevAuthProvider();
 
 // =============================================================================
 // API Client
@@ -99,21 +69,36 @@ const authProvider: AuthProvider = new DevAuthProvider();
  *
  * @param request - Upload request with encrypted payload
  * @returns Promise resolving to upload response
+ * @throws AuthenticationError if auth fails
  * @throws Error if upload fails
  */
 export async function uploadToCloud(
   request: CloudUploadRequest
 ): Promise<CloudUploadResponse> {
-  const authHeaders = await authProvider.getAuthHeaders();
+  // Get auth headers
+  const authResult = await getAuthHeaders(true);
+
+  if (!authResult.success) {
+    throw new AuthenticationError(authResult.error, authResult.code);
+  }
 
   const response = await fetch(`${CLOUD_API_BASE_URL}/sync/upload`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders,
+      ...authResult.headers,
     },
     body: JSON.stringify(request),
   });
+
+  // Handle 401 - clear token and prompt re-auth
+  if (response.status === 401) {
+    await clearAuthToken();
+    throw new AuthenticationError(
+      "Session expired. Please sign in again.",
+      "SESSION_EXPIRED"
+    );
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
@@ -128,21 +113,36 @@ export async function uploadToCloud(
  * Download encrypted data from cloud.
  *
  * @returns Promise resolving to download response, or null if no data
+ * @throws AuthenticationError if auth fails
  * @throws Error if download fails
  */
 export async function downloadFromCloud(): Promise<CloudDownloadResponse | null> {
-  const authHeaders = await authProvider.getAuthHeaders();
+  // Get auth headers
+  const authResult = await getAuthHeaders(true);
+
+  if (!authResult.success) {
+    throw new AuthenticationError(authResult.error, authResult.code);
+  }
 
   const response = await fetch(`${CLOUD_API_BASE_URL}/sync/download`, {
     method: "GET",
     headers: {
-      ...authHeaders,
+      ...authResult.headers,
     },
   });
 
   // 204 = No content (no cloud backup)
   if (response.status === 204) {
     return null;
+  }
+
+  // Handle 401 - clear token and prompt re-auth
+  if (response.status === 401) {
+    await clearAuthToken();
+    throw new AuthenticationError(
+      "Session expired. Please sign in again.",
+      "SESSION_EXPIRED"
+    );
   }
 
   if (!response.ok) {
@@ -153,4 +153,3 @@ export async function downloadFromCloud(): Promise<CloudDownloadResponse | null>
 
   return response.json();
 }
-

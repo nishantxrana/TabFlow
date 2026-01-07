@@ -12,18 +12,10 @@
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
-  "permissions": [
-    "tabs",
-    "storage",
-    "alarms",
-    "identity"
-  ],
+  "permissions": ["tabs", "storage", "alarms", "identity"],
   "host_permissions": [],
   "oauth2": {
     "client_id": "497790964210-llnjj6m60170mu0u74njrn7di8r23lmp.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile"
-    ]
+    "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
   }
 }

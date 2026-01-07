@@ -15,7 +15,7 @@ import type { Session, BackupBlob } from "@shared/types";
 import { CLOUD_SYNC_SCHEMA_VERSION } from "@shared/constants";
 import { getAllSessions } from "@storage/sessions";
 import { restoreFromBackup, parseImportData } from "@storage/backups";
-import { uploadToCloud, downloadFromCloud } from "./cloudApi";
+import { uploadToCloud, downloadFromCloud, AuthenticationError } from "./cloudApi";
 import { encryptData, decryptData } from "./encryption";
 
 // =============================================================================
@@ -42,6 +42,7 @@ export interface CloudDownloadNotFound {
 export interface CloudSyncError {
   success: false;
   error: string;
+  isAuthError?: boolean;
 }
 
 // Preview types (for safe restore flow)
@@ -117,11 +118,13 @@ export async function handleCloudUpload(): Promise<UploadResult> {
       syncedAt: response.syncedAt,
     };
   } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
     const message = error instanceof Error ? error.message : "Upload failed";
-    console.error("[CloudSync] Upload error:", message);
+    console.error("[CloudSync] Upload error:", message, isAuthError ? "(auth)" : "");
     return {
       success: false,
       error: message,
+      isAuthError,
     };
   }
 }
@@ -191,11 +194,13 @@ export async function handleCloudDownloadPreview(): Promise<PreviewResult> {
       },
     };
   } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
     const message = error instanceof Error ? error.message : "Preview failed";
-    console.error("[CloudSync] Preview error:", message);
+    console.error("[CloudSync] Preview error:", message, isAuthError ? "(auth)" : "");
     return {
       success: false,
       error: message,
+      isAuthError,
     };
   }
 }
@@ -228,11 +233,13 @@ export async function handleCloudApplyRestore(
       sessionsRestored: backupBlob.sessions.length,
     };
   } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
     const message = error instanceof Error ? error.message : "Restore failed";
-    console.error("[CloudSync] Apply restore error:", message);
+    console.error("[CloudSync] Apply restore error:", message, isAuthError ? "(auth)" : "");
     return {
       success: false,
       error: message,
+      isAuthError,
     };
   }
 }
@@ -292,11 +299,13 @@ export async function handleCloudDownload(): Promise<DownloadResult> {
       lastSyncedAt: response.lastSyncedAt,
     };
   } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
     const message = error instanceof Error ? error.message : "Download failed";
-    console.error("[CloudSync] Download error:", message);
+    console.error("[CloudSync] Download error:", message, isAuthError ? "(auth)" : "");
     return {
       success: false,
       error: message,
+      isAuthError,
     };
   }
 }
