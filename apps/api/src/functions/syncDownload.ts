@@ -34,8 +34,9 @@ import { downloadSyncBlob } from "../lib/storage";
 // Constants
 // =============================================================================
 
-/** Dev mode flag - ONLY for local testing */
-const DEV_MODE_ENABLED = process.env.DEV_MODE_ENABLED === "true";
+/** Dev mode flag - ONLY for local testing, blocked in Azure Production */
+const IS_LOCAL = process.env.AZURE_FUNCTIONS_ENVIRONMENT !== "Production";
+const DEV_MODE_ENABLED = IS_LOCAL && process.env.DEV_MODE_ENABLED === "true";
 
 // =============================================================================
 // Types

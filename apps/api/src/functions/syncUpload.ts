@@ -38,6 +38,10 @@ const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024;
 /** Supported schema versions */
 const SUPPORTED_SCHEMA_VERSIONS = [1];
 
+/** Dev mode flag - ONLY for local testing, blocked in Azure Production */
+const IS_LOCAL = process.env.AZURE_FUNCTIONS_ENVIRONMENT !== "Production";
+const DEV_MODE_ENABLED = IS_LOCAL && process.env.DEV_MODE_ENABLED === "true";
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -186,28 +190,40 @@ async function syncUpload(
   // Step 1: Authenticate
   // -------------------------------------------------------------------------
 
-  const idToken = extractIdToken(request);
-  if (!idToken) {
-    context.log("[syncUpload] No authorization token provided");
-    return jsonResponse(
-      { error: "Authorization required", code: "UNAUTHORIZED" },
-      401
-    );
+  let userId: string;
+
+  // DEV MODE: Allow bypassing auth with X-DEV-USER-ID header (LOCAL ONLY)
+  const devUserId = request.headers.get("x-dev-user-id");
+  if (DEV_MODE_ENABLED && devUserId) {
+    context.log("⚠️  [syncUpload] DEV MODE: Using mock user ID from header");
+    context.log("⚠️  [syncUpload] THIS MUST BE DISABLED IN PRODUCTION");
+    userId = `dev-${devUserId}`;
+  } else {
+    // Production auth flow
+    const idToken = extractIdToken(request);
+    if (!idToken) {
+      context.log("[syncUpload] No authorization token provided");
+      return jsonResponse(
+        { error: "Authorization required", code: "UNAUTHORIZED" },
+        401
+      );
+    }
+
+    // Verify token and get userId (NEVER log the token)
+    context.log("[syncUpload] Verifying authentication...");
+    const authResult = await verifyGoogleToken(idToken);
+
+    if (!authResult.success) {
+      context.log(`[syncUpload] Auth failed: ${authResult.code}`);
+      return jsonResponse(
+        { error: authResult.error, code: authResult.code },
+        401
+      );
+    }
+
+    userId = authResult.userId;
   }
 
-  // Verify token and get userId (NEVER log the token)
-  context.log("[syncUpload] Verifying authentication...");
-  const authResult = await verifyGoogleToken(idToken);
-
-  if (!authResult.success) {
-    context.log(`[syncUpload] Auth failed: ${authResult.code}`);
-    return jsonResponse(
-      { error: authResult.error, code: authResult.code },
-      401
-    );
-  }
-
-  const userId = authResult.userId;
   context.log(`[syncUpload] Authenticated user: ${userId.substring(0, 8)}...`);
 
   // -------------------------------------------------------------------------
