@@ -43,7 +43,8 @@ export const MessageAction = {
 
   // Cloud Sync
   CLOUD_UPLOAD: "CLOUD_UPLOAD",
-  CLOUD_DOWNLOAD: "CLOUD_DOWNLOAD",
+  CLOUD_DOWNLOAD_PREVIEW: "CLOUD_DOWNLOAD_PREVIEW",
+  CLOUD_APPLY_RESTORE: "CLOUD_APPLY_RESTORE",
 } as const;
 
 export type MessageActionType = (typeof MessageAction)[keyof typeof MessageAction];
@@ -135,10 +136,23 @@ export interface CloudUploadResponse {
   syncedAt: string;
 }
 
-export interface CloudDownloadResponse {
+export interface CloudDownloadPreviewResponse {
   found: boolean;
-  sessions?: Session[];
-  lastSyncedAt?: string;
+  preview?: {
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    // Encrypted sessions stored temporarily for apply step
+    sessionsJson: string;
+  };
+}
+
+export interface CloudApplyRestorePayload {
+  sessionsJson: string;
+}
+
+export interface CloudApplyRestoreResponse {
+  sessionsRestored: number;
 }
 
 // =============================================================================
@@ -168,6 +182,7 @@ export interface MessageResponseMap {
   [MessageAction.APPLY_GROUPING]: Session;
   // Cloud Sync
   [MessageAction.CLOUD_UPLOAD]: CloudUploadResponse;
-  [MessageAction.CLOUD_DOWNLOAD]: CloudDownloadResponse;
+  [MessageAction.CLOUD_DOWNLOAD_PREVIEW]: CloudDownloadPreviewResponse;
+  [MessageAction.CLOUD_APPLY_RESTORE]: CloudApplyRestoreResponse;
 }
 

@@ -29,6 +29,14 @@ const App: React.FC = () => {
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
+  // Restore preview state (held in memory until confirmed)
+  const [restorePreview, setRestorePreview] = useState<{
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    sessionsJson: string;
+  } | null>(null);
+
   // Toast state
   const [toast, setToast] = useState<{
     message: string;
@@ -189,11 +197,11 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Handle cloud download (first step - check for data)
-  const handleCloudDownload = useCallback(async () => {
+  // Handle cloud download preview (first step - fetch and preview only)
+  const handleCloudDownloadPreview = useCallback(async () => {
     setCloudSyncStatus("downloading");
     try {
-      const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD);
+      const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD_PREVIEW);
 
       if (!result.found) {
         setCloudSyncStatus("idle");
@@ -201,16 +209,10 @@ const App: React.FC = () => {
         return;
       }
 
-      // Data found and already applied (with undo support)
-      setLastSyncedAt(result.lastSyncedAt || null);
-      setCloudSyncStatus("success");
-      setToast({
-        message: `Restored ${result.sessions?.length || 0} sessions from cloud. You can undo this in the popup.`,
-        type: "success",
-      });
-
-      // Reset status after a delay
-      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+      // Data found - show preview dialog (DO NOT apply yet)
+      setRestorePreview(result.preview!);
+      setShowRestoreConfirm(true);
+      setCloudSyncStatus("idle");
     } catch (err) {
       setCloudSyncStatus("error");
       setToast({
@@ -223,16 +225,54 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Handle restore confirmation
+  // Handle restore confirmation (apply the previewed data)
   const handleRestoreConfirm = useCallback(async () => {
-    setShowRestoreConfirm(false);
-    await handleCloudDownload();
-  }, [handleCloudDownload]);
+    if (!restorePreview) {
+      setShowRestoreConfirm(false);
+      return;
+    }
 
-  // Prompt for restore confirmation
-  const handleRestoreClick = useCallback(() => {
-    setShowRestoreConfirm(true);
+    setCloudSyncStatus("downloading");
+    try {
+      const result = await sendMessage(MessageAction.CLOUD_APPLY_RESTORE, {
+        sessionsJson: restorePreview.sessionsJson,
+      });
+
+      setLastSyncedAt(restorePreview.lastSyncedAt);
+      setCloudSyncStatus("success");
+      setToast({
+        message: `Restored ${result.sessionsRestored} sessions from cloud`,
+        type: "success",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } catch (err) {
+      setCloudSyncStatus("error");
+      setToast({
+        message: err instanceof Error ? err.message : "Restore failed",
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } finally {
+      // Clear preview and close dialog
+      setRestorePreview(null);
+      setShowRestoreConfirm(false);
+    }
+  }, [restorePreview]);
+
+  // Cancel restore - clear preview data
+  const handleRestoreCancel = useCallback(() => {
+    setRestorePreview(null);
+    setShowRestoreConfirm(false);
   }, []);
+
+  // Prompt for restore - fetch preview first
+  const handleRestoreClick = useCallback(() => {
+    handleCloudDownloadPreview();
+  }, [handleCloudDownloadPreview]);
 
   // Tier display
   const tierLabel = tier === "pro" ? "Pro" : "Free";
@@ -651,18 +691,103 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Restore from Cloud Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showRestoreConfirm}
-        title="Restore from Cloud?"
-        message="This will replace all your local sessions with data from the cloud. Your current sessions will be backed up and you can undo this action."
-        confirmLabel="Restore"
-        cancelLabel="Cancel"
-        variant="warning"
-        onConfirm={handleRestoreConfirm}
-        onCancel={() => setShowRestoreConfirm(false)}
-        loading={cloudSyncStatus === "downloading"}
-      />
+      {/* Restore from Cloud Confirmation Dialog with Preview */}
+      {showRestoreConfirm && restorePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={cloudSyncStatus === "downloading" ? undefined : handleRestoreCancel}
+          />
+
+          {/* Dialog */}
+          <div className="relative w-[90%] max-w-[420px] bg-white rounded-xl shadow-2xl animate-scale-in">
+            {/* Icon + Title */}
+            <div className="px-6 pt-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg
+                  className="w-7 h-7 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">Restore from Cloud?</h2>
+            </div>
+
+            {/* Preview Summary */}
+            <div className="px-6 py-4">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Cloud Backup Contents:</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Sessions</span>
+                    <span className="font-medium text-gray-900">{restorePreview.sessionCount}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total Tabs</span>
+                    <span className="font-medium text-gray-900">{restorePreview.totalTabs}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Last Synced</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(restorePreview.lastSyncedAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-amber-700 bg-amber-50 rounded-lg p-3">
+                ⚠️ This will replace all your current local sessions. You can undo this action afterward.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                type="button"
+                onClick={handleRestoreCancel}
+                disabled={cloudSyncStatus === "downloading"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRestoreConfirm}
+                disabled={cloudSyncStatus === "downloading"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {cloudSyncStatus === "downloading" && (
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                )}
+                Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Clear Confirmation Dialog */}
       <ConfirmDialog

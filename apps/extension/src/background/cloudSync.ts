@@ -44,8 +44,26 @@ export interface CloudSyncError {
   error: string;
 }
 
+// Preview types (for safe restore flow)
+export interface CloudPreviewResult {
+  success: true;
+  found: true;
+  preview: {
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    sessionsJson: string; // Serialized sessions for apply step
+  };
+}
+
+export interface CloudPreviewNotFound {
+  success: true;
+  found: false;
+}
+
 export type UploadResult = CloudUploadResult | CloudSyncError;
 export type DownloadResult = CloudDownloadResult | CloudDownloadNotFound | CloudSyncError;
+export type PreviewResult = CloudPreviewResult | CloudPreviewNotFound | CloudSyncError;
 
 // =============================================================================
 // Upload Handler
@@ -109,7 +127,118 @@ export async function handleCloudUpload(): Promise<UploadResult> {
 }
 
 // =============================================================================
-// Download Handler
+// Preview Handler (Safe Restore Flow)
+// =============================================================================
+
+/**
+ * Download and preview cloud backup WITHOUT applying.
+ *
+ * Flow:
+ * 1. Fetch from cloud
+ * 2. If no data, return not found
+ * 3. Decrypt payload
+ * 4. Parse and validate
+ * 5. Return preview summary + serialized data for later apply
+ *
+ * DOES NOT modify local data.
+ *
+ * @returns Promise resolving to preview result
+ */
+export async function handleCloudDownloadPreview(): Promise<PreviewResult> {
+  try {
+    console.log("[CloudSync] Starting preview download...");
+
+    // 1. Fetch from cloud
+    const response = await downloadFromCloud();
+
+    // 2. Check if data exists
+    if (!response) {
+      console.log("[CloudSync] No cloud backup found");
+      return {
+        success: true,
+        found: false,
+      };
+    }
+
+    console.log("[CloudSync] Downloaded data, decrypting for preview...");
+
+    // 3. Decrypt
+    const decryptedJson = await decryptData(response.payload);
+
+    // 4. Parse and validate
+    const backupBlob = parseImportData(decryptedJson);
+
+    // 5. Calculate summary
+    const sessionCount = backupBlob.sessions.length;
+    const totalTabs = backupBlob.sessions.reduce((total, session) => {
+      return total + session.groups.reduce((groupTotal, group) => {
+        return groupTotal + group.tabs.length;
+      }, 0);
+    }, 0);
+
+    console.log(
+      `[CloudSync] Preview ready: ${sessionCount} sessions, ${totalTabs} tabs`
+    );
+
+    return {
+      success: true,
+      found: true,
+      preview: {
+        sessionCount,
+        totalTabs,
+        lastSyncedAt: response.lastSyncedAt,
+        sessionsJson: decryptedJson, // Store for apply step
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Preview failed";
+    console.error("[CloudSync] Preview error:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Apply previously downloaded sessions from JSON.
+ * Called after user confirms restore.
+ *
+ * @param sessionsJson - Serialized backup blob JSON
+ * @returns Promise resolving to number of sessions restored
+ */
+export async function handleCloudApplyRestore(
+  sessionsJson: string
+): Promise<{ success: true; sessionsRestored: number } | CloudSyncError> {
+  try {
+    console.log("[CloudSync] Applying restore from preview...");
+
+    // Parse the stored JSON
+    const backupBlob = parseImportData(sessionsJson);
+
+    // Apply to local storage
+    await applyCloudDownload(backupBlob.sessions);
+
+    console.log(
+      `[CloudSync] Restore applied: ${backupBlob.sessions.length} sessions`
+    );
+
+    return {
+      success: true,
+      sessionsRestored: backupBlob.sessions.length,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Restore failed";
+    console.error("[CloudSync] Apply restore error:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+// =============================================================================
+// Download Handler (Legacy - kept for reference)
 // =============================================================================
 
 /**
@@ -126,6 +255,7 @@ export async function handleCloudUpload(): Promise<UploadResult> {
  * The caller (UI) should confirm with user before applying.
  *
  * @returns Promise resolving to download result
+ * @deprecated Use handleCloudDownloadPreview + handleCloudApplyRestore instead
  */
 export async function handleCloudDownload(): Promise<DownloadResult> {
   try {
