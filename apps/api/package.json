@@ -1,0 +1,29 @@
+{
+  "name": "tabflow-api",
+  "version": "0.1.0",
+  "description": "TabFlow Azure Functions API",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "@azure/storage-blob": "^12.17.0",
+    "google-auth-library": "^9.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "azure-functions-core-tools": "^4.0.5571",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

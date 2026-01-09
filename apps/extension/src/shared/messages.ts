@@ -40,6 +40,11 @@ export const MessageAction = {
 
   // Tier
   GET_TIER: "GET_TIER",
+
+  // Cloud Sync
+  CLOUD_UPLOAD: "CLOUD_UPLOAD",
+  CLOUD_DOWNLOAD_PREVIEW: "CLOUD_DOWNLOAD_PREVIEW",
+  CLOUD_APPLY_RESTORE: "CLOUD_APPLY_RESTORE",
 } as const;
 
 export type MessageActionType = (typeof MessageAction)[keyof typeof MessageAction];
@@ -126,6 +131,30 @@ export interface ClearDataResponse {
   success: true;
 }
 
+// Cloud Sync Response Types
+export interface CloudUploadResponse {
+  syncedAt: string;
+}
+
+export interface CloudDownloadPreviewResponse {
+  found: boolean;
+  preview?: {
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    // Encrypted sessions stored temporarily for apply step
+    sessionsJson: string;
+  };
+}
+
+export interface CloudApplyRestorePayload {
+  sessionsJson: string;
+}
+
+export interface CloudApplyRestoreResponse {
+  sessionsRestored: number;
+}
+
 // =============================================================================
 // Type-Safe Message Helpers
 // =============================================================================
@@ -151,5 +180,9 @@ export interface MessageResponseMap {
   // AI actions (Phase 2)
   [MessageAction.TRIGGER_AI_GROUP]: unknown;
   [MessageAction.APPLY_GROUPING]: Session;
+  // Cloud Sync
+  [MessageAction.CLOUD_UPLOAD]: CloudUploadResponse;
+  [MessageAction.CLOUD_DOWNLOAD_PREVIEW]: CloudDownloadPreviewResponse;
+  [MessageAction.CLOUD_APPLY_RESTORE]: CloudApplyRestoreResponse;
 }
 

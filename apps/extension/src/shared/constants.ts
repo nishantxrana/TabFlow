@@ -67,3 +67,25 @@ export const MAX_SESSION_NAME_LENGTH = 50;
 
 export const ALARM_HOURLY_BACKUP = "hourlyBackup";
 
+// =============================================================================
+// Cloud Sync Configuration
+// =============================================================================
+
+/**
+ * Cloud sync API base URL.
+ *
+ * Uses Vite environment variable:
+ * - Development: Set VITE_CLOUD_API_URL in .env.development
+ * - Production: Set VITE_CLOUD_API_URL in .env.production
+ *
+ * Fallback to localhost for local development.
+ */
+export const CLOUD_API_BASE_URL =
+  import.meta.env.VITE_CLOUD_API_URL || "http://localhost:3000";
+
+/** Cloud sync schema version */
+export const CLOUD_SYNC_SCHEMA_VERSION = 1;
+
+/** Encryption key derivation salt (must match across sessions) */
+export const ENCRYPTION_SALT = "tabflow-v1";
+

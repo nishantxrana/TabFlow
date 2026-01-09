@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "danger" | "default";
+  variant?: "danger" | "warning" | "default";
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -45,6 +45,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const confirmButtonClass =
     variant === "danger"
       ? "bg-red-600 hover:bg-red-700 text-white"
+      : variant === "warning"
+      ? "bg-amber-600 hover:bg-amber-700 text-white"
       : "bg-primary-600 hover:bg-primary-700 text-white";
 
   return (
@@ -72,6 +74,23 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+          )}
+          {variant === "warning" && (
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+              <svg
+                className="w-7 h-7 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
                 />
               </svg>
             </div>

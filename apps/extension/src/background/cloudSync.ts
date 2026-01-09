@@ -1,0 +1,336 @@
+/**
+ * TabFlow – Cloud Sync Handler
+ *
+ * Orchestrates cloud upload and download operations.
+ * Handles encryption, API calls, and data transformation.
+ *
+ * Design:
+ * - Manual sync only (no auto-sync)
+ * - Full snapshot upload/download
+ * - Client-side encryption
+ * - No merging or conflict resolution
+ */
+
+import type { Session, BackupBlob } from "@shared/types";
+import { CLOUD_SYNC_SCHEMA_VERSION } from "@shared/constants";
+import { getAllSessions } from "@storage/sessions";
+import { restoreFromBackup, parseImportData } from "@storage/backups";
+import { uploadToCloud, downloadFromCloud, AuthenticationError } from "./cloudApi";
+import { encryptData, decryptData } from "./encryption";
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface CloudUploadResult {
+  success: true;
+  syncedAt: string;
+}
+
+export interface CloudDownloadResult {
+  success: true;
+  found: true;
+  sessions: Session[];
+  lastSyncedAt: string;
+}
+
+export interface CloudDownloadNotFound {
+  success: true;
+  found: false;
+}
+
+export interface CloudSyncError {
+  success: false;
+  error: string;
+  isAuthError?: boolean;
+}
+
+// Preview types (for safe restore flow)
+export interface CloudPreviewResult {
+  success: true;
+  found: true;
+  preview: {
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    sessionsJson: string; // Serialized sessions for apply step
+  };
+}
+
+export interface CloudPreviewNotFound {
+  success: true;
+  found: false;
+}
+
+export type UploadResult = CloudUploadResult | CloudSyncError;
+export type DownloadResult = CloudDownloadResult | CloudDownloadNotFound | CloudSyncError;
+export type PreviewResult = CloudPreviewResult | CloudPreviewNotFound | CloudSyncError;
+
+// =============================================================================
+// Upload Handler
+// =============================================================================
+
+/**
+ * Upload current sessions to cloud.
+ *
+ * Flow:
+ * 1. Get all local sessions
+ * 2. Create backup blob
+ * 3. Serialize to JSON
+ * 4. Encrypt
+ * 5. Upload to cloud
+ *
+ * @returns Promise resolving to upload result
+ */
+export async function handleCloudUpload(): Promise<UploadResult> {
+  try {
+    console.log("[CloudSync] Starting upload...");
+
+    // 1. Get all sessions
+    const sessions = await getAllSessions();
+    console.log(`[CloudSync] Found ${sessions.length} sessions to upload`);
+
+    // 2. Create backup blob
+    const backupBlob: BackupBlob = {
+      version: CLOUD_SYNC_SCHEMA_VERSION,
+      timestamp: new Date().toISOString(),
+      sessions,
+    };
+
+    // 3. Serialize to JSON
+    const json = JSON.stringify(backupBlob);
+
+    // 4. Encrypt
+    console.log("[CloudSync] Encrypting data...");
+    const encryptedPayload = await encryptData(json);
+
+    // 5. Upload to cloud
+    console.log("[CloudSync] Uploading to cloud...");
+    const response = await uploadToCloud({
+      payload: encryptedPayload,
+      schemaVersion: CLOUD_SYNC_SCHEMA_VERSION,
+      clientTimestamp: Date.now(),
+    });
+
+    console.log("[CloudSync] Upload successful:", response.syncedAt);
+    return {
+      success: true,
+      syncedAt: response.syncedAt,
+    };
+  } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
+    const message = error instanceof Error ? error.message : "Upload failed";
+    console.error("[CloudSync] Upload error:", message, isAuthError ? "(auth)" : "");
+    return {
+      success: false,
+      error: message,
+      isAuthError,
+    };
+  }
+}
+
+// =============================================================================
+// Preview Handler (Safe Restore Flow)
+// =============================================================================
+
+/**
+ * Download and preview cloud backup WITHOUT applying.
+ *
+ * Flow:
+ * 1. Fetch from cloud
+ * 2. If no data, return not found
+ * 3. Decrypt payload
+ * 4. Parse and validate
+ * 5. Return preview summary + serialized data for later apply
+ *
+ * DOES NOT modify local data.
+ *
+ * @returns Promise resolving to preview result
+ */
+export async function handleCloudDownloadPreview(): Promise<PreviewResult> {
+  try {
+    console.log("[CloudSync] Starting preview download...");
+
+    // 1. Fetch from cloud
+    const response = await downloadFromCloud();
+
+    // 2. Check if data exists
+    if (!response) {
+      console.log("[CloudSync] No cloud backup found");
+      return {
+        success: true,
+        found: false,
+      };
+    }
+
+    console.log("[CloudSync] Downloaded data, decrypting for preview...");
+
+    // 3. Decrypt
+    const decryptedJson = await decryptData(response.payload);
+
+    // 4. Parse and validate
+    const backupBlob = parseImportData(decryptedJson);
+
+    // 5. Calculate summary
+    const sessionCount = backupBlob.sessions.length;
+    const totalTabs = backupBlob.sessions.reduce((total, session) => {
+      return total + session.groups.reduce((groupTotal, group) => {
+        return groupTotal + group.tabs.length;
+      }, 0);
+    }, 0);
+
+    console.log(
+      `[CloudSync] Preview ready: ${sessionCount} sessions, ${totalTabs} tabs`
+    );
+
+    return {
+      success: true,
+      found: true,
+      preview: {
+        sessionCount,
+        totalTabs,
+        lastSyncedAt: response.lastSyncedAt,
+        sessionsJson: decryptedJson, // Store for apply step
+      },
+    };
+  } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
+    const message = error instanceof Error ? error.message : "Preview failed";
+    console.error("[CloudSync] Preview error:", message, isAuthError ? "(auth)" : "");
+    return {
+      success: false,
+      error: message,
+      isAuthError,
+    };
+  }
+}
+
+/**
+ * Apply previously downloaded sessions from JSON.
+ * Called after user confirms restore.
+ *
+ * @param sessionsJson - Serialized backup blob JSON
+ * @returns Promise resolving to number of sessions restored
+ */
+export async function handleCloudApplyRestore(
+  sessionsJson: string
+): Promise<{ success: true; sessionsRestored: number } | CloudSyncError> {
+  try {
+    console.log("[CloudSync] Applying restore from preview...");
+
+    // Parse the stored JSON
+    const backupBlob = parseImportData(sessionsJson);
+
+    // Apply to local storage
+    await applyCloudDownload(backupBlob.sessions);
+
+    console.log(
+      `[CloudSync] Restore applied: ${backupBlob.sessions.length} sessions`
+    );
+
+    return {
+      success: true,
+      sessionsRestored: backupBlob.sessions.length,
+    };
+  } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
+    const message = error instanceof Error ? error.message : "Restore failed";
+    console.error("[CloudSync] Apply restore error:", message, isAuthError ? "(auth)" : "");
+    return {
+      success: false,
+      error: message,
+      isAuthError,
+    };
+  }
+}
+
+// =============================================================================
+// Download Handler (Legacy - kept for reference)
+// =============================================================================
+
+/**
+ * Download sessions from cloud.
+ *
+ * Flow:
+ * 1. Fetch from cloud
+ * 2. If no data, return not found
+ * 3. Decrypt payload
+ * 4. Parse and validate backup blob
+ * 5. Return sessions (caller decides whether to apply)
+ *
+ * Note: This does NOT automatically replace local data.
+ * The caller (UI) should confirm with user before applying.
+ *
+ * @returns Promise resolving to download result
+ * @deprecated Use handleCloudDownloadPreview + handleCloudApplyRestore instead
+ */
+export async function handleCloudDownload(): Promise<DownloadResult> {
+  try {
+    console.log("[CloudSync] Starting download...");
+
+    // 1. Fetch from cloud
+    const response = await downloadFromCloud();
+
+    // 2. Check if data exists
+    if (!response) {
+      console.log("[CloudSync] No cloud backup found");
+      return {
+        success: true,
+        found: false,
+      };
+    }
+
+    console.log("[CloudSync] Downloaded data, decrypting...");
+
+    // 3. Decrypt
+    const decryptedJson = await decryptData(response.payload);
+
+    // 4. Parse and validate
+    const backupBlob = parseImportData(decryptedJson);
+
+    console.log(
+      `[CloudSync] Download successful: ${backupBlob.sessions.length} sessions`
+    );
+
+    return {
+      success: true,
+      found: true,
+      sessions: backupBlob.sessions,
+      lastSyncedAt: response.lastSyncedAt,
+    };
+  } catch (error) {
+    const isAuthError = error instanceof AuthenticationError;
+    const message = error instanceof Error ? error.message : "Download failed";
+    console.error("[CloudSync] Download error:", message, isAuthError ? "(auth)" : "");
+    return {
+      success: false,
+      error: message,
+      isAuthError,
+    };
+  }
+}
+
+/**
+ * Apply downloaded sessions to local storage.
+ * Replaces all local sessions with cloud data.
+ *
+ * WARNING: This is destructive. Caller should confirm with user first.
+ *
+ * @param sessions - Sessions to apply
+ * @returns Promise resolving to previous sessions (for undo)
+ */
+export async function applyCloudDownload(sessions: Session[]): Promise<Session[]> {
+  console.log(`[CloudSync] Applying ${sessions.length} sessions from cloud`);
+
+  const backupBlob: BackupBlob = {
+    version: CLOUD_SYNC_SCHEMA_VERSION,
+    timestamp: new Date().toISOString(),
+    sessions,
+  };
+
+  const previousSessions = await restoreFromBackup(backupBlob);
+  console.log("[CloudSync] Cloud data applied successfully");
+
+  return previousSessions;
+}
+

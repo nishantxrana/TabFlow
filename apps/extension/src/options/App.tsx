@@ -11,6 +11,9 @@ import { sendMessage } from "./hooks/useMessage";
 import { useSettings } from "./hooks/useSettings";
 import { Toggle, Toast, ConfirmDialog } from "./components";
 
+// Cloud sync status type
+type CloudSyncStatus = "idle" | "authenticating" | "uploading" | "downloading" | "success" | "error";
+
 const App: React.FC = () => {
   // Settings from hook
   const { settings, tier, loading, updateSettings } = useSettings();
@@ -20,6 +23,19 @@ const App: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+  // Cloud sync state
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("idle");
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+
+  // Restore preview state (held in memory until confirmed)
+  const [restorePreview, setRestorePreview] = useState<{
+    sessionCount: number;
+    totalTabs: number;
+    lastSyncedAt: string;
+    sessionsJson: string;
+  } | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{
@@ -158,6 +174,121 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Handle cloud upload
+  const handleCloudUpload = useCallback(async () => {
+    setCloudSyncStatus("authenticating");
+    try {
+      setCloudSyncStatus("uploading");
+      const result = await sendMessage(MessageAction.CLOUD_UPLOAD);
+      setLastSyncedAt(result.syncedAt);
+      setCloudSyncStatus("success");
+      setToast({ message: "Uploaded to cloud successfully", type: "success" });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } catch (err) {
+      setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Upload failed";
+      // Check if it's an auth-related error
+      const isAuthError = message.includes("Sign-in") || 
+                          message.includes("cancelled") || 
+                          message.includes("Session expired") ||
+                          message.includes("Authentication");
+      setToast({
+        message: isAuthError ? message : "Upload failed. Please try again.",
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    }
+  }, []);
+
+  // Handle cloud download preview (first step - fetch and preview only)
+  const handleCloudDownloadPreview = useCallback(async () => {
+    setCloudSyncStatus("authenticating");
+    try {
+      setCloudSyncStatus("downloading");
+      const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD_PREVIEW);
+
+      if (!result.found) {
+        setCloudSyncStatus("idle");
+        setToast({ message: "No cloud backup found", type: "error" });
+        return;
+      }
+
+      // Data found - show preview dialog (DO NOT apply yet)
+      setRestorePreview(result.preview!);
+      setShowRestoreConfirm(true);
+      setCloudSyncStatus("idle");
+    } catch (err) {
+      setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Download failed";
+      // Check if it's an auth-related error
+      const isAuthError = message.includes("Sign-in") || 
+                          message.includes("cancelled") || 
+                          message.includes("Session expired") ||
+                          message.includes("Authentication");
+      setToast({
+        message: isAuthError ? message : "Download failed. Please try again.",
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    }
+  }, []);
+
+  // Handle restore confirmation (apply the previewed data)
+  const handleRestoreConfirm = useCallback(async () => {
+    if (!restorePreview) {
+      setShowRestoreConfirm(false);
+      return;
+    }
+
+    setCloudSyncStatus("downloading");
+    try {
+      const result = await sendMessage(MessageAction.CLOUD_APPLY_RESTORE, {
+        sessionsJson: restorePreview.sessionsJson,
+      });
+
+      setLastSyncedAt(restorePreview.lastSyncedAt);
+      setCloudSyncStatus("success");
+      setToast({
+        message: `Restored ${result.sessionsRestored} sessions from cloud`,
+        type: "success",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } catch (err) {
+      setCloudSyncStatus("error");
+      const message = err instanceof Error ? err.message : "Restore failed";
+      setToast({
+        message,
+        type: "error",
+      });
+
+      // Reset status after a delay
+      setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } finally {
+      // Clear preview and close dialog
+      setRestorePreview(null);
+      setShowRestoreConfirm(false);
+    }
+  }, [restorePreview]);
+
+  // Cancel restore - clear preview data
+  const handleRestoreCancel = useCallback(() => {
+    setRestorePreview(null);
+    setShowRestoreConfirm(false);
+  }, []);
+
+  // Prompt for restore - fetch preview first
+  const handleRestoreClick = useCallback(() => {
+    handleCloudDownloadPreview();
+  }, [handleCloudDownloadPreview]);
+
   // Tier display
   const tierLabel = tier === "pro" ? "Pro" : "Free";
   const tierBadgeClass =
@@ -223,10 +354,153 @@ const App: React.FC = () => {
               </div>
             </section>
 
+            {/* Cloud Sync */}
+            <section className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Cloud Sync
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Manually sync your sessions to the cloud. Your data is encrypted before upload.
+              </p>
+
+              {/* Sync Status */}
+              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    cloudSyncStatus === "idle"
+                      ? "bg-gray-400"
+                      : cloudSyncStatus === "authenticating"
+                      ? "bg-blue-400 animate-pulse"
+                      : cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"
+                      ? "bg-yellow-400 animate-pulse"
+                      : cloudSyncStatus === "success"
+                      ? "bg-green-400"
+                      : "bg-red-400"
+                  }`}
+                />
+                <span className="text-sm text-gray-600">
+                  {cloudSyncStatus === "idle" && "Ready to sync"}
+                  {cloudSyncStatus === "authenticating" && "Signing in..."}
+                  {cloudSyncStatus === "uploading" && "Uploading..."}
+                  {cloudSyncStatus === "downloading" && "Restoring..."}
+                  {cloudSyncStatus === "success" && "Sync successful"}
+                  {cloudSyncStatus === "error" && "Sync failed"}
+                </span>
+                {lastSyncedAt && cloudSyncStatus === "idle" && (
+                  <span className="text-xs text-gray-400 ml-auto">
+                    Last synced: {new Date(lastSyncedAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+
+              {/* Sync Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCloudUpload}
+                  disabled={cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      {cloudSyncStatus === "authenticating" ? "Signing in..." : "Uploading..."}
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      Upload to Cloud
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleRestoreClick}
+                  disabled={cloudSyncStatus === "authenticating" || cloudSyncStatus === "uploading" || cloudSyncStatus === "downloading"}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cloudSyncStatus === "authenticating" || cloudSyncStatus === "downloading" ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      {cloudSyncStatus === "authenticating" ? "Signing in..." : "Restoring..."}
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                        />
+                      </svg>
+                      Restore from Cloud
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-400 mt-3">
+                ⚠️ Restore will replace all local sessions. You can undo this action.
+              </p>
+            </section>
+
             {/* Backup Settings */}
             <section className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Backup Settings
+                Local Backup Settings
               </h2>
 
               {/* Auto Backup Toggle */}
@@ -434,6 +708,104 @@ const App: React.FC = () => {
           </>
         )}
       </main>
+
+      {/* Restore from Cloud Confirmation Dialog with Preview */}
+      {showRestoreConfirm && restorePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={cloudSyncStatus === "downloading" ? undefined : handleRestoreCancel}
+          />
+
+          {/* Dialog */}
+          <div className="relative w-[90%] max-w-[420px] bg-white rounded-xl shadow-2xl animate-scale-in">
+            {/* Icon + Title */}
+            <div className="px-6 pt-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg
+                  className="w-7 h-7 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">Restore from Cloud?</h2>
+            </div>
+
+            {/* Preview Summary */}
+            <div className="px-6 py-4">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Cloud Backup Contents:</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Sessions</span>
+                    <span className="font-medium text-gray-900">{restorePreview.sessionCount}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total Tabs</span>
+                    <span className="font-medium text-gray-900">{restorePreview.totalTabs}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Last Synced</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(restorePreview.lastSyncedAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-amber-700 bg-amber-50 rounded-lg p-3">
+                ⚠️ This will replace all your current local sessions. You can undo this action afterward.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                type="button"
+                onClick={handleRestoreCancel}
+                disabled={cloudSyncStatus === "downloading"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRestoreConfirm}
+                disabled={cloudSyncStatus === "downloading"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {cloudSyncStatus === "downloading" && (
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                )}
+                Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Clear Confirmation Dialog */}
       <ConfirmDialog

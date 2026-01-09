@@ -49,6 +49,11 @@ import {
   pushRenameSessionUndo,
   pushImportUndo,
 } from "./undo";
+import {
+  handleCloudUpload,
+  handleCloudDownloadPreview,
+  handleCloudApplyRestore,
+} from "./cloudSync";
 
 // =============================================================================
 // Settings Helpers (chrome.storage.local)
@@ -343,6 +348,89 @@ export async function handleMessage(
       case MessageAction.GET_TIER: {
         const tier = await getTier();
         return { success: true, data: tier };
+      }
+
+      // =========================================================================
+      // Cloud Sync
+      // =========================================================================
+
+      case MessageAction.CLOUD_UPLOAD: {
+        const result = await handleCloudUpload();
+
+        if (!result.success) {
+          return { success: false, error: result.error };
+        }
+
+        console.log("[TabFlow] Cloud upload successful:", result.syncedAt);
+        return {
+          success: true,
+          data: { syncedAt: result.syncedAt },
+        };
+      }
+
+      case MessageAction.CLOUD_DOWNLOAD_PREVIEW: {
+        // Preview only - does NOT apply data
+        const result = await handleCloudDownloadPreview();
+
+        if (!result.success) {
+          return { success: false, error: result.error };
+        }
+
+        if (!result.found) {
+          console.log("[TabFlow] No cloud backup found");
+          return {
+            success: true,
+            data: { found: false },
+          };
+        }
+
+        console.log(
+          "[TabFlow] Cloud preview ready:",
+          result.preview.sessionCount,
+          "sessions,",
+          result.preview.totalTabs,
+          "tabs"
+        );
+
+        return {
+          success: true,
+          data: {
+            found: true,
+            preview: result.preview,
+          },
+        };
+      }
+
+      case MessageAction.CLOUD_APPLY_RESTORE: {
+        // Apply the previewed restore after user confirmation
+        const { sessionsJson } = payload as { sessionsJson: string };
+
+        if (!sessionsJson) {
+          return { success: false, error: "Sessions data required" };
+        }
+
+        // Get current sessions for undo before applying
+        const previousSessions = await getAllSessions();
+
+        const result = await handleCloudApplyRestore(sessionsJson);
+
+        if (!result.success) {
+          return { success: false, error: result.error };
+        }
+
+        // Push undo entry so user can recover
+        await pushImportUndo(previousSessions);
+
+        console.log(
+          "[TabFlow] Cloud restore applied:",
+          result.sessionsRestored,
+          "sessions"
+        );
+
+        return {
+          success: true,
+          data: { sessionsRestored: result.sessionsRestored },
+        };
       }
 
       // =========================================================================
