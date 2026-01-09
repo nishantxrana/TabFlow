@@ -38,6 +38,10 @@ jobs:
               working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
               run: npm run build
 
+            - name: Remove node_modules
+              working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+              run: rm -rf node_modules
+
             - name: Deploy to Azure Functions
               uses: Azure/functions-action@v1
               with:
