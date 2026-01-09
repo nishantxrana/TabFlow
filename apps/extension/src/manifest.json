@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TabFlow",
-  "version": "0.1.0",
-  "description": "A local-first, reliability-focused tab manager with optional AI-powered grouping",
+  "name": "TabFlow – Smart Tab Sessions & Cloud Sync",
+  "version": "0.1.1",
+  "description": "Save your open tabs as sessions, sync across devices, and group with AI. Perfect for productivity and research.",
   "action": {
     "default_popup": "popup.html",
     "default_title": "TabFlow"
