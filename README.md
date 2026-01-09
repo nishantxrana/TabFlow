@@ -1,86 +1,137 @@
 # TabFlow
 
-A local-first, reliability-focused tab manager for Chrome with optional AI-powered grouping.
+A local-first tab session manager for Chrome with optional encrypted cloud sync.
+
+---
+
+## What TabFlow Is
+
+TabFlow is a Chrome extension (Manifest V3) that lets you save groups of open tabs as named sessions and restore them later. It prioritizes local storage and user control.
+
+**What TabFlow is not:**
+
+- Not a bookmark manager
+- Not an automatic background sync tool
+- Not a cross-browser extension (Chrome only, currently)
+- Not a team/collaboration tool
+
+---
+
+## Current Features
+
+These features are implemented and available today:
+
+- **Save sessions** — Capture open tabs as a named session
+- **Restore sessions** — Reopen all tabs from a saved session
+- **Rename sessions** — Edit session names after creation
+- **Search tabs** — Find tabs across all sessions
+- **Undo system** — Revert recent actions
+- **Copy links** — Copy all URLs from a session
+- **Export/import** — Backup and restore data as JSON
+- **Auto-backup** — Periodic local backups via `chrome.alarms`
+- **Cloud sync (optional)** — Manual, encrypted sync to the cloud
+- **Restore preview** — Preview cloud data before overwriting local sessions
+
+---
 
 ## Architecture
 
-TabFlow is a monorepo containing:
+TabFlow is a monorepo with two packages:
 
-| Package | Description |
-|---------|-------------|
-| `apps/extension` | Chrome Extension (Manifest V3) |
-| `apps/api` | Azure Functions backend |
-| `docs/` | Architecture and implementation documentation |
+| Package          | Description                            |
+| ---------------- | -------------------------------------- |
+| `apps/extension` | Chrome Extension (Manifest V3)         |
+| `apps/api`       | Azure Functions backend for cloud sync |
 
-## Tech Stack
+### Extension
 
-### Chrome Extension
-- TypeScript
-- React 18
-- Tailwind CSS
-- Vite + CRXJS
-- IndexedDB (primary storage)
-- chrome.storage.local (settings)
+- **Language:** TypeScript
+- **UI:** React 18 + Tailwind CSS
+- **Build:** Vite + CRXJS
+- **Storage:** IndexedDB (sessions), chrome.storage.local (settings)
 
-### API
-- Azure Functions v4 (Node.js)
-- TypeScript
-- Google Auth Library
+### Backend
 
-## Quick Start
+- **Runtime:** Azure Functions v4 (Node.js 18)
+- **Language:** TypeScript
+- **Storage:** Azure Blob Storage (encrypted blobs only)
+
+---
+
+## Security and Privacy
+
+TabFlow is designed with privacy as a core principle:
+
+| Principle              | Implementation                                   |
+| ---------------------- | ------------------------------------------------ |
+| Local-first            | All data stored locally by default               |
+| No background sync     | Cloud sync is manual and user-initiated          |
+| Client-side encryption | Data encrypted before leaving the device         |
+| No analytics           | No telemetry, tracking, or usage data collection |
+| No ads                 | No advertising of any kind                       |
+| No data selling        | User data is never sold or shared                |
+| No remote code         | All code bundled in extension package            |
+
+See [privacy.md](privacy.md) for the full privacy policy.
+
+---
+
+## Authentication
+
+Cloud sync uses Google authentication via Chrome's `chrome.identity` API.
+
+- Works only in Chrome (not Chromium-based browsers without Google integration)
+- Tokens are short-lived and not stored persistently
+- Email is used only to associate cloud data with the user
+
+**Future:** Magic link authentication for non-Chrome browsers is planned but not yet implemented.
+
+---
+
+## Development Setup
 
 ### Prerequisites
 
 - Node.js 18+
 - npm 9+
-- Azure Functions Core Tools v4 (for API development)
+- Azure Functions Core Tools v4 (for backend development)
 
-### Install Dependencies
+### Install
 
 ```bash
-# Install all packages
 npm run install:all
-
-# Or individually:
-npm install --prefix apps/extension
-npm install --prefix apps/api
 ```
 
-### Development
-
-#### Chrome Extension
+### Extension
 
 ```bash
-# Build extension
-npm run extension:build
-
-# Or run in dev mode with hot reload
+# Development with hot reload
 npm run extension:dev
+
+# Production build
+npm run extension:build
 ```
 
-Load the extension in Chrome:
-1. Navigate to `chrome://extensions`
+Load in Chrome:
+
+1. Go to `chrome://extensions`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
 4. Select `apps/extension/dist/`
 
-#### API
+### Backend
 
 ```bash
-# Build API
+# Build
 npm run api:build
 
-# Start local Azure Functions host
+# Start local server
 npm run api:start
 ```
 
-API available at `http://localhost:7071`
+Local API runs at `http://localhost:7071`
 
-### Build All
-
-```bash
-npm run build:all
-```
+---
 
 ## Project Structure
 
@@ -94,8 +145,7 @@ tabflow/
 │   │   │   ├── options/    # Options page (React)
 │   │   │   ├── storage/    # IndexedDB layer
 │   │   │   └── shared/     # Types, constants
-│   │   ├── dist/           # Build output
-│   │   └── package.json
+│   │   └── dist/           # Build output
 │   │
 │   └── api/                # Azure Functions
 │       ├── src/
@@ -104,49 +154,29 @@ tabflow/
 │       └── package.json
 │
 ├── docs/                   # Documentation
-│   ├── architecture/
-│   ├── implementation/
-│   └── roadmap/
-│
-├── package.json            # Root package (scripts only)
+├── privacy.md              # Privacy policy
 └── README.md
 ```
 
-## Documentation
+---
 
-See the `docs/` folder for detailed documentation:
+## Project Status
 
-- [Architecture Overview](docs/architecture/overview.md)
-- [Chrome Extension Architecture](docs/architecture/chrome-extension.md)
-- [Azure Function Architecture](docs/architecture/azure-function.md)
-- [Implementation Plan](docs/implementation/chrome-extension-plan.md)
-- [Roadmap](docs/roadmap/phases.md)
+| Milestone                      | Status         |
+| ------------------------------ | -------------- |
+| Local session management       | ✅ Complete    |
+| Cloud sync (manual, encrypted) | ✅ Complete    |
+| Google authentication          | ✅ Complete    |
+| Chrome Web Store               | Unlisted (MVP) |
 
-## Current Status
+### Planned (Not Yet Implemented)
 
-### Phase 1 (MVP) - ✅ Complete
-- [x] Local tab session management
-- [x] Save/restore sessions
-- [x] Search tabs
-- [x] Undo system
-- [x] Session rename
-- [x] Copy links
-- [x] Export/import data
-- [x] Auto-backup
+- Magic link authentication for non-Chrome browsers
+- AI-powered tab grouping
+- Monetization / Pro tier
 
-### Phase 2 (Auth) - 🚧 In Progress
-- [x] Monorepo structure
-- [x] Azure Functions scaffold
-- [x] Google authentication endpoint
-- [ ] Extension auth integration
-- [ ] Cloud sync infrastructure
-
-### Phase 3 (AI & Sync) - Planned
-- [ ] AI-powered tab grouping
-- [ ] Cloud sync
-- [ ] Pro tier features
+---
 
 ## License
 
 MIT
-
