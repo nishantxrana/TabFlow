@@ -1,0 +1,52 @@
+name: Deploy API to Azure Functions
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "apps/api/**"
+            - ".github/workflows/deploy-api.yml"
+    workflow_dispatch:
+
+env:
+    AZURE_FUNCTIONAPP_NAME: "tabflow-api" # Update with your Function App name
+    AZURE_FUNCTIONAPP_PACKAGE_PATH: "apps/api"
+    NODE_VERSION: "22.x"
+
+jobs:
+    build-and-deploy:
+        environment: production
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js ${{ env.NODE_VERSION }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "npm"
+                  cache-dependency-path: "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/package-lock.json"
+
+            - name: Install dependencies
+              working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+              run: npm ci
+
+            - name: Build project
+              working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+              run: npm run build
+
+            - name: Remove node_modules
+              working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+              run: rm -rf node_modules
+
+            - name: Deploy to Azure Functions
+              uses: Azure/functions-action@v1
+              with:
+                  app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+                  package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+                  publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+                  scm-do-build-during-deployment: true
+                  enable-oryx-build: true
