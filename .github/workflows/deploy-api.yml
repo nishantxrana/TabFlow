@@ -3,7 +3,7 @@ name: Deploy API to Azure Functions
 on:
     push:
         branches:
-            - fn-action-add
+            - main
         paths:
             - "apps/api/**"
             - ".github/workflows/deploy-api.yml"
