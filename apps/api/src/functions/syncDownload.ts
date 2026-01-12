@@ -29,6 +29,7 @@ import {
 } from "@azure/functions";
 import { verifyGoogleToken } from "../lib/auth";
 import { downloadSyncBlob } from "../lib/storage";
+import { createPreflightResponse, withCorsHeaders } from "../lib/cors";
 
 // =============================================================================
 // Constants
@@ -75,19 +76,21 @@ function extractIdToken(request: HttpRequest): string | null {
 }
 
 /**
- * Create a JSON response.
+ * Create a JSON response with optional CORS headers.
  */
 function jsonResponse(
   body: SyncDownloadSuccessResponse | SyncDownloadErrorResponse,
-  status: number
+  status: number,
+  origin: string | null = null
 ): HttpResponseInit {
-  return {
+  const response: HttpResponseInit = {
     status,
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   };
+  return withCorsHeaders(response, origin);
 }
 
 // =============================================================================
@@ -98,13 +101,22 @@ async function syncDownload(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const origin = request.headers.get("origin");
+
+  // Handle CORS preflight (OPTIONS) - must be first
+  if (request.method === "OPTIONS") {
+    context.log("[syncDownload] Handling CORS preflight");
+    return createPreflightResponse(origin);
+  }
+
   context.log("[syncDownload] Processing download request");
 
   // Only accept GET requests
   if (request.method !== "GET") {
     return jsonResponse(
       { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
-      405
+      405,
+      origin
     );
   }
 
@@ -127,7 +139,8 @@ async function syncDownload(
       context.log("[syncDownload] No authorization token provided");
       return jsonResponse(
         { error: "Authorization required", code: "UNAUTHORIZED" },
-        401
+        401,
+        origin
       );
     }
 
@@ -139,7 +152,8 @@ async function syncDownload(
       context.log(`[syncDownload] Auth failed: ${authResult.code}`);
       return jsonResponse(
         { error: authResult.error, code: authResult.code },
-        401
+        401,
+        origin
       );
     }
 
@@ -161,17 +175,21 @@ async function syncDownload(
     context.log(`[syncDownload] Download failed: ${downloadResult.code}`);
     return jsonResponse(
       { error: downloadResult.error, code: downloadResult.code },
-      500
+      500,
+      origin
     );
   }
 
   // Handle no data (204 No Content)
   if (!downloadResult.found) {
     context.log("[syncDownload] No sync data found for user");
-    return {
-      status: 204,
-      headers: {},
-    };
+    return withCorsHeaders(
+      {
+        status: 204,
+        headers: {},
+      },
+      origin
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -187,7 +205,8 @@ async function syncDownload(
       schemaVersion: downloadResult.schemaVersion,
       lastSyncedAt: downloadResult.lastSyncedAt,
     },
-    200
+    200,
+    origin
   );
 }
 
@@ -196,7 +215,7 @@ async function syncDownload(
 // =============================================================================
 
 app.http("syncDownload", {
-  methods: ["GET"],
+  methods: ["GET", "OPTIONS"],
   authLevel: "anonymous",
   route: "sync/download",
   handler: syncDownload,
