@@ -240,7 +240,9 @@ async function syncUpload(
       userId = authResult.userId;
     }
 
-    context.log(`[syncUpload] Authenticated user: ${userId.substring(0, 8)}...`);
+    context.log(
+      `[syncUpload] Authenticated user: ${userId.substring(0, 8)}...`
+    );
 
     // -------------------------------------------------------------------------
     // Step 2: Parse and Validate Request Body

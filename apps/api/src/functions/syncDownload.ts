@@ -131,7 +131,9 @@ async function syncDownload(
     // DEV MODE: Allow bypassing auth with X-DEV-USER-ID header (LOCAL ONLY)
     const devUserId = request.headers.get("x-dev-user-id");
     if (DEV_MODE_ENABLED && devUserId) {
-      context.log("⚠️  [syncDownload] DEV MODE: Using mock user ID from header");
+      context.log(
+        "⚠️  [syncDownload] DEV MODE: Using mock user ID from header"
+      );
       context.log("⚠️  [syncDownload] THIS MUST BE DISABLED IN PRODUCTION");
       userId = `dev-${devUserId}`;
     } else {
@@ -162,7 +164,9 @@ async function syncDownload(
       userId = authResult.userId;
     }
 
-    context.log(`[syncDownload] Authenticated user: ${userId.substring(0, 8)}...`);
+    context.log(
+      `[syncDownload] Authenticated user: ${userId.substring(0, 8)}...`
+    );
 
     // -------------------------------------------------------------------------
     // Step 2: Download from Blob Storage
@@ -198,7 +202,9 @@ async function syncDownload(
     // Step 3: Return Success
     // -------------------------------------------------------------------------
 
-    context.log(`[syncDownload] Returning sync data (last synced: ${downloadResult.lastSyncedAt})`);
+    context.log(
+      `[syncDownload] Returning sync data (last synced: ${downloadResult.lastSyncedAt})`
+    );
 
     // DO NOT log payload contents
     return jsonResponse(
@@ -231,4 +237,3 @@ app.http("syncDownload", {
   route: "sync/download",
   handler: syncDownload,
 });
-
