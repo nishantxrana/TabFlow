@@ -109,7 +109,10 @@ export async function verifyGoogleToken(
     if (!response.ok || tokenInfo.error_description) {
       const isExpired = tokenInfo.error_description?.includes("expired");
       // Log category only, not the actual error message (could contain token info)
-      console.error("[Auth] Token validation failed:", isExpired ? "expired" : "invalid");
+      console.error(
+        "[Auth] Token validation failed:",
+        isExpired ? "expired" : "invalid"
+      );
 
       if (isExpired) {
         return {
