@@ -107,10 +107,11 @@ export async function verifyGoogleToken(
 
     // Check for error response
     if (!response.ok || tokenInfo.error_description) {
-      const errorMsg = tokenInfo.error_description || "Token validation failed";
-      console.error("[Auth] Google tokeninfo error:", errorMsg);
+      const isExpired = tokenInfo.error_description?.includes("expired");
+      // Log category only, not the actual error message (could contain token info)
+      console.error("[Auth] Token validation failed:", isExpired ? "expired" : "invalid");
 
-      if (errorMsg.includes("expired")) {
+      if (isExpired) {
         return {
           success: false,
           error: "Token has expired",
@@ -129,10 +130,8 @@ export async function verifyGoogleToken(
     // For Chrome extension tokens, check both 'aud' and 'azp' (authorized party)
     const tokenAudience = tokenInfo.aud || tokenInfo.azp;
     if (tokenAudience !== expectedClientId) {
-      console.error(
-        "[Auth] Audience mismatch:",
-        tokenAudience?.substring(0, 20) + "..."
-      );
+      // Don't log actual audience values - could be sensitive
+      console.error("[Auth] Token audience does not match expected client ID");
       return {
         success: false,
         error: "Token was not issued for this application",
