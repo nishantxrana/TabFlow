@@ -12,10 +12,51 @@
  * Security:
  * - Never logs tokens or sensitive data
  * - Handles auth errors explicitly
+ *
+ * Development:
+ * - When hitting localhost, uses X-DEV-USER-ID header instead of Google auth
+ * - This bypasses OAuth issues with unpacked extensions
  */
 
 import { CLOUD_API_BASE_URL } from "@shared/constants";
 import { getAuthHeaders, clearAuthToken } from "./auth";
+
+// =============================================================================
+// Dev Mode Detection
+// =============================================================================
+
+/**
+ * Check if we're hitting a local development server.
+ */
+function isLocalDev(): boolean {
+  return CLOUD_API_BASE_URL.includes("localhost");
+}
+
+/**
+ * Get auth headers for API requests.
+ * Uses dev bypass for localhost, real Google auth for production.
+ */
+async function getApiHeaders(): Promise<{ headers: Record<string, string> }> {
+  if (isLocalDev()) {
+    console.log("[CloudApi] Using dev mode auth (localhost)");
+    return {
+      headers: {
+        "X-DEV-USER-ID": "local-dev-user",
+      },
+    };
+  }
+
+  // Production: use real Google auth
+  const authResult = await getAuthHeaders(true);
+  if (!authResult.success) {
+    throw new AuthenticationError(authResult.error, authResult.code);
+  }
+  return {
+    headers: {
+      Authorization: authResult.headers.Authorization,
+    },
+  };
+}
 
 // =============================================================================
 // Types
@@ -75,18 +116,14 @@ export class AuthenticationError extends Error {
 export async function uploadToCloud(
   request: CloudUploadRequest
 ): Promise<CloudUploadResponse> {
-  // Get auth headers
-  const authResult = await getAuthHeaders(true);
-
-  if (!authResult.success) {
-    throw new AuthenticationError(authResult.error, authResult.code);
-  }
+  // Get auth headers (dev bypass or real Google auth)
+  const { headers: authHeaders } = await getApiHeaders();
 
   const response = await fetch(`${CLOUD_API_BASE_URL}/sync/upload`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...authResult.headers,
+      ...authHeaders,
     },
     body: JSON.stringify(request),
   });
@@ -117,17 +154,13 @@ export async function uploadToCloud(
  * @throws Error if download fails
  */
 export async function downloadFromCloud(): Promise<CloudDownloadResponse | null> {
-  // Get auth headers
-  const authResult = await getAuthHeaders(true);
-
-  if (!authResult.success) {
-    throw new AuthenticationError(authResult.error, authResult.code);
-  }
+  // Get auth headers (dev bypass or real Google auth)
+  const { headers: authHeaders } = await getApiHeaders();
 
   const response = await fetch(`${CLOUD_API_BASE_URL}/sync/download`, {
     method: "GET",
     headers: {
-      ...authResult.headers,
+      ...authHeaders,
     },
   });
 
@@ -147,7 +180,8 @@ export async function downloadFromCloud(): Promise<CloudDownloadResponse | null>
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    const errorMessage = (errorBody as CloudApiError).error || "Download failed";
+    const errorMessage =
+      (errorBody as CloudApiError).error || "Download failed";
     throw new Error(errorMessage);
   }
 

@@ -4,9 +4,14 @@
  * Handles CORS for Chrome extension requests.
  *
  * Security:
- * - Only allows the TabFlow extension origin
+ * - Production: Only allows the published TabFlow extension origin
+ * - Development: Can add additional origins via CORS_ALLOWED_ORIGINS env var
  * - No wildcards
  * - No credentials
+ *
+ * Environment Variables:
+ * - CORS_ALLOWED_ORIGINS: Comma-separated list of additional origins (optional)
+ *   Example: "chrome-extension://dev123,http://localhost:3000"
  */
 
 import { HttpResponseInit } from "@azure/functions";
@@ -16,10 +21,32 @@ import { HttpResponseInit } from "@azure/functions";
 // =============================================================================
 
 /**
- * Allowed Chrome extension origin.
- * This is the only origin that can make cross-origin requests.
+ * Production Chrome extension origin (always allowed).
+ * This is hardcoded for security - cannot be disabled.
  */
-const ALLOWED_ORIGIN = "chrome-extension://oniialkgdccpmecdkgpdheloohpcikmf";
+const PRODUCTION_EXTENSION_ORIGIN =
+  "chrome-extension://oniialkgdccpmecdkgpdheloohpcikmf";
+
+/**
+ * Get all allowed origins.
+ * - Always includes production extension origin
+ * - Optionally includes additional origins from CORS_ALLOWED_ORIGINS env var
+ */
+function getAllowedOrigins(): string[] {
+  const origins = [PRODUCTION_EXTENSION_ORIGIN];
+
+  // Add additional origins from environment (for dev/testing)
+  const additionalOrigins = process.env.CORS_ALLOWED_ORIGINS;
+  if (additionalOrigins) {
+    const extras = additionalOrigins
+      .split(",")
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
+    origins.push(...extras);
+  }
+
+  return origins;
+}
 
 /**
  * Allowed HTTP methods for CORS.
@@ -50,7 +77,8 @@ export type CorsHeaders = Record<string, string>;
  * Check if the given origin is allowed.
  */
 export function isOriginAllowed(origin: string | null): boolean {
-  return origin === ALLOWED_ORIGIN;
+  if (!origin) return false;
+  return getAllowedOrigins().includes(origin);
 }
 
 /**
@@ -58,12 +86,13 @@ export function isOriginAllowed(origin: string | null): boolean {
  * Returns null if origin is not allowed.
  */
 export function getCorsHeaders(origin: string | null): CorsHeaders | null {
-  if (!isOriginAllowed(origin)) {
+  if (!origin || !isOriginAllowed(origin)) {
     return null;
   }
 
+  // Echo back the requesting origin (must be in allowed list)
   const headers: CorsHeaders = {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": ALLOWED_METHODS,
     "Access-Control-Allow-Headers": ALLOWED_HEADERS,
     "Access-Control-Max-Age": MAX_AGE,
