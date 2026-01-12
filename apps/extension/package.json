@@ -4,8 +4,9 @@
   "description": "A local-first, reliability-focused tab manager with optional AI-powered grouping",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --watch --mode development",
     "build": "tsc && vite build",
+    "build:local": "vite build --mode development",
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },
@@ -31,4 +32,3 @@
     "vite": "^5.0.12"
   }
 }
-

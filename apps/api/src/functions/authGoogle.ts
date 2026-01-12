@@ -104,8 +104,6 @@ async function authGoogle(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  context.log("[authGoogle] Processing authentication request");
-
   // Only accept POST requests
   if (request.method !== "POST") {
     return jsonResponse(
@@ -118,7 +116,7 @@ async function authGoogle(
   const idToken = await extractIdToken(request);
 
   if (!idToken) {
-    context.log("[authGoogle] No ID token provided");
+    context.log("[authGoogle] AUTH_MISSING: No token provided");
     return jsonResponse(
       {
         error: "ID token required. Provide via Authorization header or request body.",
@@ -128,12 +126,10 @@ async function authGoogle(
     );
   }
 
-  // Verify the token (NEVER log the token itself)
-  context.log("[authGoogle] Verifying Google ID token...");
   const result = await verifyGoogleToken(idToken);
 
   if (!result.success) {
-    context.log(`[authGoogle] Verification failed: ${result.code}`);
+    context.log(`[authGoogle] AUTH_FAILED: ${result.code}`);
     const statusCode =
       result.code === "EXPIRED_TOKEN" || result.code === "INVALID_TOKEN"
         ? 401
@@ -147,8 +143,7 @@ async function authGoogle(
     );
   }
 
-  // Success - return userId (NEVER return the raw Google sub or email to client)
-  context.log(`[authGoogle] Authentication successful for user: ${result.userId.substring(0, 8)}...`);
+  context.log(`[authGoogle] SUCCESS: user=${result.userId.substring(0, 8)}`);
 
   return jsonResponse(
     {

@@ -183,123 +183,130 @@ async function syncUpload(
 
   // Handle CORS preflight (OPTIONS) - must be first
   if (request.method === "OPTIONS") {
-    context.log("[syncUpload] Handling CORS preflight");
     return createPreflightResponse(origin);
   }
 
-  context.log("[syncUpload] Processing upload request");
-
-  // Only accept POST requests
-  if (request.method !== "POST") {
-    return jsonResponse(
-      { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
-      405,
-      origin
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Step 1: Authenticate
-  // -------------------------------------------------------------------------
-
-  let userId: string;
-
-  // DEV MODE: Allow bypassing auth with X-DEV-USER-ID header (LOCAL ONLY)
-  const devUserId = request.headers.get("x-dev-user-id");
-  if (DEV_MODE_ENABLED && devUserId) {
-    context.log("⚠️  [syncUpload] DEV MODE: Using mock user ID from header");
-    context.log("⚠️  [syncUpload] THIS MUST BE DISABLED IN PRODUCTION");
-    userId = `dev-${devUserId}`;
-  } else {
-    // Production auth flow
-    const idToken = extractIdToken(request);
-    if (!idToken) {
-      context.log("[syncUpload] No authorization token provided");
-      return jsonResponse(
-        { error: "Authorization required", code: "UNAUTHORIZED" },
-        401,
-        origin
-      );
-    }
-
-    // Verify token and get userId (NEVER log the token)
-    context.log("[syncUpload] Verifying authentication...");
-    const authResult = await verifyGoogleToken(idToken);
-
-    if (!authResult.success) {
-      context.log(`[syncUpload] Auth failed: ${authResult.code}`);
-      return jsonResponse(
-        { error: authResult.error, code: authResult.code },
-        401,
-        origin
-      );
-    }
-
-    userId = authResult.userId;
-  }
-
-  context.log(`[syncUpload] Authenticated user: ${userId.substring(0, 8)}...`);
-
-  // -------------------------------------------------------------------------
-  // Step 2: Parse and Validate Request Body
-  // -------------------------------------------------------------------------
-
-  let body: SyncUploadRequestBody;
+  // Wrap entire handler in try-catch to ensure CORS headers on all responses
   try {
-    body = (await request.json()) as SyncUploadRequestBody;
-  } catch {
+    // Only accept POST requests
+    if (request.method !== "POST") {
+      return jsonResponse(
+        { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
+        405,
+        origin
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 1: Authenticate
+    // -------------------------------------------------------------------------
+
+    let userId: string;
+
+    // DEV MODE: Allow bypassing auth with X-DEV-USER-ID header (LOCAL ONLY)
+    const devUserId = request.headers.get("x-dev-user-id");
+    if (DEV_MODE_ENABLED && devUserId) {
+      context.warn(
+        "[syncUpload] DEV_MODE: Using mock user ID - MUST BE DISABLED IN PRODUCTION"
+      );
+      userId = `dev-${devUserId}`;
+    } else {
+      // Production auth flow
+      const idToken = extractIdToken(request);
+      if (!idToken) {
+        context.log("[syncUpload] AUTH_MISSING: No token provided");
+        return jsonResponse(
+          { error: "Authorization required", code: "UNAUTHORIZED" },
+          401,
+          origin
+        );
+      }
+
+      const authResult = await verifyGoogleToken(idToken);
+
+      if (!authResult.success) {
+        context.log(`[syncUpload] AUTH_FAILED: ${authResult.code}`);
+        return jsonResponse(
+          { error: authResult.error, code: authResult.code },
+          401,
+          origin
+        );
+      }
+
+      userId = authResult.userId;
+    }
+
+    const userIdShort = userId.substring(0, 8);
+
+    // -------------------------------------------------------------------------
+    // Step 2: Parse and Validate Request Body
+    // -------------------------------------------------------------------------
+
+    let body: SyncUploadRequestBody;
+    try {
+      body = (await request.json()) as SyncUploadRequestBody;
+    } catch {
+      return jsonResponse(
+        { error: "Invalid JSON body", code: "INVALID_JSON" },
+        400,
+        origin
+      );
+    }
+
+    const validationError = validateRequestBody(body);
+    if (validationError) {
+      context.log(`[syncUpload] VALIDATION_FAILED: ${validationError.code}`);
+      return jsonResponse(validationError, 400, origin);
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 3: Upload to Blob Storage
+    // -------------------------------------------------------------------------
+
+    const uploadResult = await uploadSyncBlob(
+      userId,
+      body.payload!,
+      body.schemaVersion!,
+      body.clientTimestamp!
+    );
+
+    if (!uploadResult.success) {
+      context.error(
+        `[syncUpload] STORAGE_ERROR: ${uploadResult.code} user=${userIdShort}`
+      );
+      return jsonResponse(
+        { error: uploadResult.error, code: uploadResult.code },
+        500,
+        origin
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 4: Return Success
+    // -------------------------------------------------------------------------
+
+    context.log(
+      `[syncUpload] SUCCESS: user=${userIdShort} synced=${uploadResult.syncedAt}`
+    );
+
     return jsonResponse(
-      { error: "Invalid JSON body", code: "INVALID_JSON" },
-      400,
+      {
+        status: "ok",
+        syncedAt: uploadResult.syncedAt,
+      },
+      200,
       origin
     );
-  }
-
-  const validationError = validateRequestBody(body);
-  if (validationError) {
-    context.log(`[syncUpload] Validation failed: ${validationError.code}`);
-    return jsonResponse(validationError, 400, origin);
-  }
-
-  // -------------------------------------------------------------------------
-  // Step 3: Upload to Blob Storage
-  // -------------------------------------------------------------------------
-
-  // DO NOT log payload contents
-  context.log(
-    `[syncUpload] Uploading sync data (schema v${body.schemaVersion})`
-  );
-
-  const uploadResult = await uploadSyncBlob(
-    userId,
-    body.payload!,
-    body.schemaVersion!,
-    body.clientTimestamp!
-  );
-
-  if (!uploadResult.success) {
-    context.log(`[syncUpload] Upload failed: ${uploadResult.code}`);
+  } catch (error) {
+    // Catch any unhandled errors - only log error type, not full message (could contain tokens)
+    const errorType = error instanceof Error ? error.name : "Unknown";
+    context.error(`[syncUpload] INTERNAL_ERROR: type=${errorType}`);
     return jsonResponse(
-      { error: uploadResult.error, code: uploadResult.code },
+      { error: "Internal server error", code: "INTERNAL_ERROR" },
       500,
       origin
     );
   }
-
-  // -------------------------------------------------------------------------
-  // Step 4: Return Success
-  // -------------------------------------------------------------------------
-
-  context.log(`[syncUpload] Upload successful at ${uploadResult.syncedAt}`);
-
-  return jsonResponse(
-    {
-      status: "ok",
-      syncedAt: uploadResult.syncedAt,
-    },
-    200,
-    origin
-  );
 }
 
 // =============================================================================

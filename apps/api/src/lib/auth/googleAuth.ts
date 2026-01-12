@@ -1,16 +1,15 @@
 /**
  * TabFlow API – Google Authentication Utilities
  *
- * Verifies Google ID tokens server-side using Google's official library.
- * Extracts user identity for internal use.
+ * Verifies Google OAuth access tokens server-side by calling Google's tokeninfo endpoint.
+ * This is used for Chrome extensions which use chrome.identity.getAuthToken().
  *
  * Security:
  * - Never trust client tokens without verification
- * - Never log ID tokens
- * - Validate issuer, audience, and expiry
+ * - Never log tokens
+ * - Validate audience matches our client ID
  */
 
-import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { createHash } from "crypto";
 
 // =============================================================================
@@ -28,10 +27,32 @@ export interface GoogleVerificationResult {
 export interface GoogleVerificationError {
   success: false;
   error: string;
-  code: "INVALID_TOKEN" | "EXPIRED_TOKEN" | "INVALID_AUDIENCE" | "VERIFICATION_FAILED";
+  code:
+    | "INVALID_TOKEN"
+    | "EXPIRED_TOKEN"
+    | "INVALID_AUDIENCE"
+    | "VERIFICATION_FAILED";
 }
 
-export type VerifyGoogleTokenResult = GoogleVerificationResult | GoogleVerificationError;
+export type VerifyGoogleTokenResult =
+  | GoogleVerificationResult
+  | GoogleVerificationError;
+
+/**
+ * Response from Google's tokeninfo endpoint
+ */
+interface GoogleTokenInfo {
+  azp?: string; // Authorized party (client ID that requested the token)
+  aud?: string; // Audience (client ID the token was issued to)
+  sub?: string; // Subject (unique user ID)
+  scope?: string; // Scopes granted
+  exp?: string; // Expiry timestamp
+  expires_in?: string; // Seconds until expiry
+  email?: string; // User's email (if email scope granted)
+  email_verified?: string;
+  access_type?: string;
+  error_description?: string;
+}
 
 // =============================================================================
 // Configuration
@@ -54,73 +75,59 @@ function getGoogleClientId(): string {
 // =============================================================================
 
 /**
- * Verify a Google ID token and extract user identity.
+ * Verify a Google OAuth access token and extract user identity.
+ *
+ * For Chrome extensions using chrome.identity.getAuthToken(), we receive
+ * an access token (not an ID token). We verify it by calling Google's
+ * tokeninfo endpoint.
  *
  * Validation steps:
- * 1. Token signature verification (via Google's library)
- * 2. Token expiry check
- * 3. Issuer validation (accounts.google.com or https://accounts.google.com)
- * 4. Audience validation (must match our client ID)
+ * 1. Call Google's tokeninfo endpoint with the access token
+ * 2. Verify the token is valid and not expired
+ * 3. Verify the audience matches our client ID
+ * 4. Extract user identity (sub, email)
  *
- * @param idToken - The Google ID token from the client
+ * @param accessToken - The Google OAuth access token from the client
  * @returns Verification result with user info or error
  */
 export async function verifyGoogleToken(
-  idToken: string
+  accessToken: string
 ): Promise<VerifyGoogleTokenResult> {
-  const clientId = getGoogleClientId();
-  const client = new OAuth2Client(clientId);
+  const expectedClientId = getGoogleClientId();
 
   try {
-    // Verify the token with Google
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: clientId,
-    });
+    // Call Google's tokeninfo endpoint to verify the access token
+    const response = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(
+        accessToken
+      )}`
+    );
 
-    const payload = ticket.getPayload();
+    const tokenInfo: GoogleTokenInfo = await response.json();
 
-    if (!payload) {
+    // Check for error response
+    if (!response.ok || tokenInfo.error_description) {
+      const isExpired = tokenInfo.error_description?.includes("expired");
+      
+      if (isExpired) {
+        return {
+          success: false,
+          error: "Token has expired",
+          code: "EXPIRED_TOKEN",
+        };
+      }
+
       return {
         success: false,
-        error: "Token payload is empty",
+        error: "Invalid token",
         code: "INVALID_TOKEN",
       };
     }
 
-    // Validate required fields
-    const validationError = validateTokenPayload(payload, clientId);
-    if (validationError) {
-      return validationError;
-    }
-
-    // Extract user identity
-    const sub = payload.sub;
-    const email = payload.email || null;
-
-    // Generate stable internal userId
-    const userId = generateUserId(sub);
-
-    return {
-      success: true,
-      userId,
-      email,
-      sub,
-      authProvider: "google",
-    };
-  } catch (error) {
-    // Handle specific Google auth errors
-    const message = error instanceof Error ? error.message : "Unknown error";
-
-    if (message.includes("Token used too late") || message.includes("expired")) {
-      return {
-        success: false,
-        error: "Token has expired",
-        code: "EXPIRED_TOKEN",
-      };
-    }
-
-    if (message.includes("audience") || message.includes("aud")) {
+    // Verify audience matches our client ID
+    // For Chrome extension tokens, check both 'aud' and 'azp' (authorized party)
+    const tokenAudience = tokenInfo.aud || tokenInfo.azp;
+    if (tokenAudience !== expectedClientId) {
       return {
         success: false,
         error: "Token was not issued for this application",
@@ -128,8 +135,30 @@ export async function verifyGoogleToken(
       };
     }
 
-    // Generic verification failure (don't expose internal details)
-    console.error("[Auth] Google token verification failed:", message);
+    // Verify we have a subject (user ID)
+    if (!tokenInfo.sub) {
+      return {
+        success: false,
+        error: "Token missing user identifier",
+        code: "INVALID_TOKEN",
+      };
+    }
+
+    // Generate stable internal userId
+    const userId = generateUserId(tokenInfo.sub);
+
+    return {
+      success: true,
+      userId,
+      email: tokenInfo.email || null,
+      sub: tokenInfo.sub,
+      authProvider: "google",
+    };
+  } catch (error) {
+    // Only log error type, not message (could contain sensitive data)
+    const errorType = error instanceof Error ? error.name : "Unknown";
+    console.error(`[Auth] VERIFICATION_ERROR: type=${errorType}`);
+
     return {
       success: false,
       error: "Token verification failed",
@@ -141,54 +170,6 @@ export async function verifyGoogleToken(
 // =============================================================================
 // Helpers
 // =============================================================================
-
-/**
- * Validate the token payload has all required fields.
- */
-function validateTokenPayload(
-  payload: TokenPayload,
-  expectedAudience: string
-): GoogleVerificationError | null {
-  // Check issuer
-  const validIssuers = ["accounts.google.com", "https://accounts.google.com"];
-  if (!payload.iss || !validIssuers.includes(payload.iss)) {
-    return {
-      success: false,
-      error: "Invalid token issuer",
-      code: "INVALID_TOKEN",
-    };
-  }
-
-  // Check audience
-  if (payload.aud !== expectedAudience) {
-    return {
-      success: false,
-      error: "Token audience mismatch",
-      code: "INVALID_AUDIENCE",
-    };
-  }
-
-  // Check expiry (Google library does this, but double-check)
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp && payload.exp < now) {
-    return {
-      success: false,
-      error: "Token has expired",
-      code: "EXPIRED_TOKEN",
-    };
-  }
-
-  // Check subject (user ID)
-  if (!payload.sub) {
-    return {
-      success: false,
-      error: "Token missing subject",
-      code: "INVALID_TOKEN",
-    };
-  }
-
-  return null;
-}
 
 /**
  * Generate a stable internal userId from Google's subject (sub).
@@ -203,4 +184,3 @@ function generateUserId(sub: string): string {
   const input = `google:${sub}`;
   return createHash("sha256").update(input).digest("hex");
 }
-
