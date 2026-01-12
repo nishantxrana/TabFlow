@@ -105,14 +105,11 @@ async function syncDownload(
 
   // Handle CORS preflight (OPTIONS) - must be first
   if (request.method === "OPTIONS") {
-    context.log("[syncDownload] Handling CORS preflight");
     return createPreflightResponse(origin);
   }
 
   // Wrap entire handler in try-catch to ensure CORS headers on all responses
   try {
-    context.log("[syncDownload] Processing download request");
-
     // Only accept GET requests
     if (request.method !== "GET") {
       return jsonResponse(
@@ -131,16 +128,13 @@ async function syncDownload(
     // DEV MODE: Allow bypassing auth with X-DEV-USER-ID header (LOCAL ONLY)
     const devUserId = request.headers.get("x-dev-user-id");
     if (DEV_MODE_ENABLED && devUserId) {
-      context.log(
-        "⚠️  [syncDownload] DEV MODE: Using mock user ID from header"
-      );
-      context.log("⚠️  [syncDownload] THIS MUST BE DISABLED IN PRODUCTION");
+      context.warn("[syncDownload] DEV_MODE: Using mock user ID - MUST BE DISABLED IN PRODUCTION");
       userId = `dev-${devUserId}`;
     } else {
       // Production auth flow
       const idToken = extractIdToken(request);
       if (!idToken) {
-        context.log("[syncDownload] No authorization token provided");
+        context.log("[syncDownload] AUTH_MISSING: No token provided");
         return jsonResponse(
           { error: "Authorization required", code: "UNAUTHORIZED" },
           401,
@@ -148,12 +142,10 @@ async function syncDownload(
         );
       }
 
-      // Verify token and get userId (NEVER log the token)
-      context.log("[syncDownload] Verifying authentication...");
       const authResult = await verifyGoogleToken(idToken);
 
       if (!authResult.success) {
-        context.log(`[syncDownload] Auth failed: ${authResult.code}`);
+        context.log(`[syncDownload] AUTH_FAILED: ${authResult.code}`);
         return jsonResponse(
           { error: authResult.error, code: authResult.code },
           401,
@@ -164,21 +156,17 @@ async function syncDownload(
       userId = authResult.userId;
     }
 
-    context.log(
-      `[syncDownload] Authenticated user: ${userId.substring(0, 8)}...`
-    );
+    const userIdShort = userId.substring(0, 8);
 
     // -------------------------------------------------------------------------
     // Step 2: Download from Blob Storage
     // -------------------------------------------------------------------------
 
-    context.log("[syncDownload] Fetching sync data...");
-
     const downloadResult = await downloadSyncBlob(userId);
 
     // Handle errors
     if (!downloadResult.success) {
-      context.log(`[syncDownload] Download failed: ${downloadResult.code}`);
+      context.error(`[syncDownload] STORAGE_ERROR: ${downloadResult.code} user=${userIdShort}`);
       return jsonResponse(
         { error: downloadResult.error, code: downloadResult.code },
         500,
@@ -188,7 +176,7 @@ async function syncDownload(
 
     // Handle no data (204 No Content)
     if (!downloadResult.found) {
-      context.log("[syncDownload] No sync data found for user");
+      context.log(`[syncDownload] NOT_FOUND: user=${userIdShort}`);
       return withCorsHeaders(
         {
           status: 204,
@@ -202,11 +190,8 @@ async function syncDownload(
     // Step 3: Return Success
     // -------------------------------------------------------------------------
 
-    context.log(
-      `[syncDownload] Returning sync data (last synced: ${downloadResult.lastSyncedAt})`
-    );
+    context.log(`[syncDownload] SUCCESS: user=${userIdShort} synced=${downloadResult.lastSyncedAt}`);
 
-    // DO NOT log payload contents
     return jsonResponse(
       {
         payload: downloadResult.payload,
@@ -217,8 +202,9 @@ async function syncDownload(
       origin
     );
   } catch (error) {
-    // Catch any unhandled errors and return with CORS headers
-    context.error("[syncDownload] Unhandled error:", error);
+    // Catch any unhandled errors - only log error type, not full message (could contain tokens)
+    const errorType = error instanceof Error ? error.name : "Unknown";
+    context.error(`[syncDownload] INTERNAL_ERROR: type=${errorType}`);
     return jsonResponse(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
       500,

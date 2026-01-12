@@ -168,17 +168,14 @@ export async function uploadSyncBlob(
       },
     });
 
-    console.log(
-      `[Storage] Blob uploaded for user ${userId.substring(0, 8)}... at ${syncedAt}`
-    );
-
     return {
       success: true,
       syncedAt,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Storage] Upload failed:", message);
+    // Only log error type, not full message (could contain connection strings)
+    const errorType = error instanceof Error ? error.name : "Unknown";
+    console.error(`[Storage] UPLOAD_ERROR: type=${errorType}`);
 
     return {
       success: false,
@@ -225,7 +222,6 @@ export async function downloadSyncBlob(
     // Check if container exists first
     const containerExists = await containerClient.exists();
     if (!containerExists) {
-      console.log(`[Storage] Container does not exist for user ${userId.substring(0, 8)}...`);
       return { success: true, found: false };
     }
 
@@ -235,7 +231,6 @@ export async function downloadSyncBlob(
     // Check if blob exists
     const exists = await blockBlobClient.exists();
     if (!exists) {
-      console.log(`[Storage] No sync data for user ${userId.substring(0, 8)}...`);
       return { success: true, found: false };
     }
 
@@ -243,14 +238,12 @@ export async function downloadSyncBlob(
     const downloadResponse = await blockBlobClient.download(0);
     const downloadedContent = await streamToString(downloadResponse.readableStreamBody);
 
-    // Parse stored blob (but DO NOT log payload)
+    // Parse stored blob (DO NOT log payload)
     const blobData: SyncBlob = JSON.parse(downloadedContent);
 
     // Get last modified timestamp
     const properties = await blockBlobClient.getProperties();
     const lastSyncedAt = properties.lastModified?.toISOString() || new Date().toISOString();
-
-    console.log(`[Storage] Blob downloaded for user ${userId.substring(0, 8)}... (synced at ${lastSyncedAt})`);
 
     return {
       success: true,
@@ -260,8 +253,9 @@ export async function downloadSyncBlob(
       lastSyncedAt,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Storage] Download failed:", message);
+    // Only log error type, not full message (could contain connection strings)
+    const errorType = error instanceof Error ? error.name : "Unknown";
+    console.error(`[Storage] DOWNLOAD_ERROR: type=${errorType}`);
 
     return {
       success: false,
