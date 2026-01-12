@@ -27,6 +27,7 @@ import {
 } from "@azure/functions";
 import { verifyGoogleToken } from "../lib/auth";
 import { uploadSyncBlob } from "../lib/storage";
+import { createPreflightResponse, withCorsHeaders } from "../lib/cors";
 
 // =============================================================================
 // Constants
@@ -84,19 +85,21 @@ function extractIdToken(request: HttpRequest): string | null {
 }
 
 /**
- * Create a JSON response.
+ * Create a JSON response with optional CORS headers.
  */
 function jsonResponse(
   body: SyncUploadSuccessResponse | SyncUploadErrorResponse,
-  status: number
+  status: number,
+  origin: string | null = null
 ): HttpResponseInit {
-  return {
+  const response: HttpResponseInit = {
     status,
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   };
+  return withCorsHeaders(response, origin);
 }
 
 /**
@@ -176,13 +179,22 @@ async function syncUpload(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const origin = request.headers.get("origin");
+
+  // Handle CORS preflight (OPTIONS) - must be first
+  if (request.method === "OPTIONS") {
+    context.log("[syncUpload] Handling CORS preflight");
+    return createPreflightResponse(origin);
+  }
+
   context.log("[syncUpload] Processing upload request");
 
   // Only accept POST requests
   if (request.method !== "POST") {
     return jsonResponse(
       { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
-      405
+      405,
+      origin
     );
   }
 
@@ -205,7 +217,8 @@ async function syncUpload(
       context.log("[syncUpload] No authorization token provided");
       return jsonResponse(
         { error: "Authorization required", code: "UNAUTHORIZED" },
-        401
+        401,
+        origin
       );
     }
 
@@ -217,7 +230,8 @@ async function syncUpload(
       context.log(`[syncUpload] Auth failed: ${authResult.code}`);
       return jsonResponse(
         { error: authResult.error, code: authResult.code },
-        401
+        401,
+        origin
       );
     }
 
@@ -236,14 +250,15 @@ async function syncUpload(
   } catch {
     return jsonResponse(
       { error: "Invalid JSON body", code: "INVALID_JSON" },
-      400
+      400,
+      origin
     );
   }
 
   const validationError = validateRequestBody(body);
   if (validationError) {
     context.log(`[syncUpload] Validation failed: ${validationError.code}`);
-    return jsonResponse(validationError, 400);
+    return jsonResponse(validationError, 400, origin);
   }
 
   // -------------------------------------------------------------------------
@@ -266,7 +281,8 @@ async function syncUpload(
     context.log(`[syncUpload] Upload failed: ${uploadResult.code}`);
     return jsonResponse(
       { error: uploadResult.error, code: uploadResult.code },
-      500
+      500,
+      origin
     );
   }
 
@@ -281,7 +297,8 @@ async function syncUpload(
       status: "ok",
       syncedAt: uploadResult.syncedAt,
     },
-    200
+    200,
+    origin
   );
 }
 
@@ -290,7 +307,7 @@ async function syncUpload(
 // =============================================================================
 
 app.http("syncUpload", {
-  methods: ["POST"],
+  methods: ["POST", "OPTIONS"],
   authLevel: "anonymous",
   route: "sync/upload",
   handler: syncUpload,
