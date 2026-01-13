@@ -2,6 +2,7 @@
  * TabFlow – Action Bar Component
  *
  * Primary actions: Save Session, Undo
+ * Design: Primary action is prominent, secondary is subdued
  */
 
 import React from "react";
@@ -23,11 +24,11 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 }) => {
   return (
     <div className="flex gap-2">
-      {/* Save Session Button */}
+      {/* Save Session - Primary Action */}
       <button
         onClick={onSave}
         disabled={saving}
-        className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 hover:shadow disabled:opacity-50 disabled:shadow-none transition-all"
       >
         {saving ? (
           <>
@@ -43,10 +44,10 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               <path
                 className="opacity-75"
                 fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            <span>Saving...</span>
+            <span>Saving…</span>
           </>
         ) : (
           <>
@@ -63,12 +64,12 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         )}
       </button>
 
-      {/* Undo Button */}
+      {/* Undo - Secondary Action */}
       <button
         onClick={onUndo}
         disabled={undoing || !canUndo}
         title={canUndo ? "Undo last action" : "Nothing to undo"}
-        className="flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:bg-gray-50 disabled:border-gray-200 transition-all"
       >
         {undoing ? (
           <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -83,7 +84,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
             <path
               className="opacity-75"
               fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
         ) : (
@@ -103,4 +104,3 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 };
 
 export default ActionBar;
-

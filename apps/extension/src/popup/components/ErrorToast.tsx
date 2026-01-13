@@ -2,6 +2,7 @@
  * TabFlow – Error Toast Component
  *
  * Displays error messages with auto-dismiss.
+ * Design: Non-alarming red with clear iconography
  */
 
 import React, { useEffect } from "react";
@@ -23,33 +24,36 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 animate-slide-up">
-      <div className="bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <svg
-            className="w-5 h-5 flex-shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span className="text-sm font-medium">{message}</span>
+      <div className="bg-white border border-red-200 shadow-lg rounded-lg px-4 py-3 flex items-start gap-3">
+        {/* Icon */}
+        <div className="flex-shrink-0 mt-0.5">
+          <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+            <svg
+              className="w-3 h-3 text-red-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
         </div>
+
+        {/* Message */}
+        <p className="flex-1 text-sm text-gray-700 leading-relaxed">{message}</p>
+
+        {/* Dismiss */}
         <button
           onClick={onDismiss}
-          className="ml-4 text-white/80 hover:text-white transition-colors"
+          className="flex-shrink-0 p-1 -mr-1 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Dismiss"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

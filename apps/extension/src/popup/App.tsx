@@ -204,10 +204,11 @@ const App: React.FC = () => {
   return (
     <div className="w-popup min-h-[300px] max-h-popup flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3 flex-shrink-0">
+      <header className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3.5 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-white/20 flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            {/* Icon placeholder - replace with actual icon asset */}
+            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
               <svg
                 className="w-4 h-4 text-white"
                 fill="none"
@@ -222,16 +223,18 @@ const App: React.FC = () => {
                 />
               </svg>
             </div>
-            <h1 className="text-lg font-semibold text-white">TabFlow</h1>
+            <h1 className="text-base font-semibold text-white tracking-tight">TabFlow</h1>
           </div>
-          <span className="text-xs text-white/60">{sessions.length} sessions</span>
+          <span className="text-xs text-white/70 font-medium tabular-nums">
+            {sessions.length} {sessions.length === 1 ? "session" : "sessions"}
+          </span>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4">
-        {/* Action Bar */}
-        <div className="mb-4">
+      <main className="flex-1 overflow-auto px-3 py-3">
+        {/* Primary Actions */}
+        <div className="mb-3">
           <ActionBar
             onSave={handleSaveClick}
             onUndo={handleUndo}
@@ -241,20 +244,25 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-4">
+        {/* Search */}
+        <div className="mb-3">
           <SearchBar onSearch={handleSearch} />
         </div>
 
-        {/* Session List */}
+        {/* Sessions */}
         {loading ? (
           <LoadingState count={2} />
         ) : fetchError ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-red-600">{fetchError}</p>
+          <div className="text-center py-10">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">Unable to load sessions</p>
             <button
               onClick={refetch}
-              className="mt-2 text-sm text-primary-600 hover:underline"
+              className="text-sm font-medium text-primary-600 hover:text-primary-700"
             >
               Try again
             </button>
@@ -275,12 +283,11 @@ const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white px-4 py-2 text-xs text-gray-400 text-center flex-shrink-0">
-        <span>TabFlow v0.1.0</span>
-        <span className="mx-2">·</span>
+      <footer className="border-t border-gray-200 bg-white px-4 py-2 flex items-center justify-between flex-shrink-0">
+        <span className="text-xs text-gray-400">v0.1.1</span>
         <button
           onClick={() => chrome.runtime.openOptionsPage()}
-          className="text-primary-600 hover:underline"
+          className="text-xs font-medium text-gray-500 hover:text-primary-600 transition-colors"
         >
           Settings
         </button>

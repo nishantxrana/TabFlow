@@ -2,6 +2,7 @@
  * TabFlow – Search Bar Component
  *
  * Filters sessions/tabs by title or domain.
+ * Clean, minimal design with clear affordances.
  */
 
 import React, { useState, useEffect } from "react";
@@ -14,7 +15,7 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
-  placeholder = "Search tabs...",
+  placeholder = "Search sessions and tabs…",
 }) => {
   const [value, setValue] = useState("");
 
@@ -34,6 +35,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="relative">
+      {/* Search Icon */}
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg
           className="h-4 w-4 text-gray-400"
@@ -49,17 +51,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           />
         </svg>
       </div>
+
+      {/* Input */}
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
+        className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg placeholder:text-gray-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 transition-all"
       />
+
+      {/* Clear Button */}
       {value && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Clear search"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -76,4 +83,3 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 };
 
 export default SearchBar;
-

@@ -5,7 +5,18 @@
   "description": "Save your open tabs as sessions, sync across devices, and group with AI. Perfect for productivity and research.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TabFlow"
+    "default_title": "TabFlow",
+    "default_icon": {
+      "16": "icons/tabflow-icon-16.png",
+      "32": "icons/tabflow-icon-32.png",
+      "48": "icons/tabflow-icon-48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/tabflow-icon-16.png",
+    "32": "icons/tabflow-icon-32.png",
+    "48": "icons/tabflow-icon-48.png",
+    "128": "icons/tabflow-icon-128.png"
   },
   "options_page": "options.html",
   "background": {
