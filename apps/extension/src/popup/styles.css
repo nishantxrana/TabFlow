@@ -1,12 +1,10 @@
 /**
  * TabFlow – Popup Styles
- * Tailwind CSS imports and custom styles.
  * 
- * Design System:
- * - Primary: Sky blue (#0284c7)
- * - Spacing: 4px base unit
- * - Border radius: 8px (cards), 6px (buttons), 4px (inputs)
- * - Shadows: Subtle, purposeful
+ * Design principles:
+ * - Calm, professional command surface
+ * - Clear hierarchy
+ * - Dark mode via system preference
  */
 
 @tailwind base;
@@ -26,7 +24,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 14px;
   line-height: 1.5;
-  color: #1f2937;
+}
+
+/* Light mode defaults */
+body {
+  color: #374151;
+  background-color: #fafafa;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e5e7eb;
+    background-color: #18181b;
+  }
 }
 
 /* Popup dimensions */
@@ -60,6 +71,15 @@ body,
   background: #9ca3af;
 }
 
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+  }
+}
+
 /* ============================================================================
    Focus States
    ============================================================================ */
@@ -69,17 +89,18 @@ body,
   outline-offset: 2px;
 }
 
+@media (prefers-color-scheme: dark) {
+  *:focus-visible {
+    outline-color: #38bdf8;
+  }
+}
+
 /* ============================================================================
    Button States
    ============================================================================ */
 
 button {
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-button:active:not(:disabled) {
-  transform: scale(0.97);
 }
 
 button:disabled {
@@ -112,7 +133,7 @@ button:disabled {
 
 @keyframes scale-in {
   from {
-    transform: scale(0.95);
+    transform: scale(0.96);
     opacity: 0;
   }
   to {
@@ -121,60 +142,14 @@ button:disabled {
   }
 }
 
-@keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
 .animate-slide-up {
-  animation: slide-up 0.2s ease-out;
+  animation: slide-up 0.15s ease-out;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+  animation: fade-in 0.1s ease-out;
 }
 
 .animate-scale-in {
-  animation: scale-in 0.15s ease-out;
-}
-
-.animate-pulse-soft {
-  animation: pulse-soft 1.5s ease-in-out infinite;
-}
-
-/* ============================================================================
-   Utility Classes
-   ============================================================================ */
-
-/* Card hover effect */
-.card-hover {
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.card-hover:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border-color: #d1d5db;
-}
-
-/* Icon button base */
-.icon-btn {
-  @apply p-1.5 rounded-md transition-all;
-}
-
-.icon-btn:hover:not(:disabled) {
-  @apply bg-gray-100;
-}
-
-.icon-btn:disabled {
-  @apply opacity-40;
-}
-
-/* Truncate text with ellipsis */
-.text-truncate {
-  @apply truncate;
-  max-width: 100%;
+  animation: scale-in 0.1s ease-out;
 }

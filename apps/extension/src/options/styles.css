@@ -1,12 +1,10 @@
 /**
  * TabFlow – Options Page Styles
- * Tailwind CSS imports and custom styles.
- *
- * Design System:
- * - Primary: Sky blue (#0284c7)
- * - Spacing: 4px base unit
- * - Border radius: 12px (cards), 8px (buttons), 6px (inputs)
- * - Shadows: Subtle, purposeful
+ * 
+ * Design principles:
+ * - Calm, professional settings page
+ * - Clear hierarchy
+ * - Dark mode via system preference
  */
 
 @tailwind base;
@@ -26,8 +24,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 14px;
   line-height: 1.6;
-  color: #1f2937;
-  background-color: #f9fafb;
+}
+
+/* Light mode defaults */
+body {
+  color: #374151;
+  background-color: #fafafa;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e5e7eb;
+    background-color: #18181b;
+  }
 }
 
 /* ============================================================================
@@ -39,17 +49,18 @@ body {
   outline-offset: 2px;
 }
 
+@media (prefers-color-scheme: dark) {
+  *:focus-visible {
+    outline-color: #38bdf8;
+  }
+}
+
 /* ============================================================================
    Button States
    ============================================================================ */
 
 button {
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-button:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 button:disabled {
@@ -60,20 +71,9 @@ button:disabled {
    Animations
    ============================================================================ */
 
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
 @keyframes scale-in {
   from {
-    transform: scale(0.95);
+    transform: scale(0.96);
     opacity: 0;
   }
   to {
@@ -91,16 +91,12 @@ button:disabled {
   }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.2s ease-out;
-}
-
 .animate-scale-in {
-  animation: scale-in 0.15s ease-out;
+  animation: scale-in 0.1s ease-out;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+  animation: fade-in 0.1s ease-out;
 }
 
 /* ============================================================================
@@ -116,34 +112,19 @@ button:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #e5e7eb;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #d1d5db;
 }
 
-/* ============================================================================
-   Card Styles
-   ============================================================================ */
-
-.settings-card {
-  @apply bg-white rounded-xl border border-gray-200 shadow-sm;
-}
-
-.settings-card-header {
-  @apply text-base font-semibold text-gray-900 mb-1;
-}
-
-.settings-card-description {
-  @apply text-sm text-gray-500 leading-relaxed;
-}
-
-.settings-row {
-  @apply flex items-center justify-between py-4;
-}
-
-.settings-row-divider {
-  @apply border-b border-gray-100;
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+  }
 }

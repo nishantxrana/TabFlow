@@ -293,8 +293,8 @@ const App: React.FC = () => {
   const tierLabel = tier === "pro" ? "Pro" : "Free";
   const tierBadgeClass =
     tier === "pro"
-      ? "bg-primary-100 text-primary-800"
-      : "bg-gray-100 text-gray-800";
+      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300"
+      : "bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-gray-300";
 
   // Helper to get human-friendly sync status
   const getSyncStatusText = () => {
@@ -306,9 +306,9 @@ const App: React.FC = () => {
       case "authenticating":
         return "Signing in…";
       case "uploading":
-        return "Uploading your sessions…";
+        return "Uploading…";
       case "downloading":
-        return "Restoring from cloud…";
+        return "Restoring…";
       case "success":
         return "Sync complete";
       case "error":
@@ -321,17 +321,17 @@ const App: React.FC = () => {
   const getSyncStatusColor = () => {
     switch (cloudSyncStatus) {
       case "idle":
-        return "bg-gray-400";
+        return "bg-gray-400 dark:bg-gray-600";
       case "authenticating":
       case "uploading":
       case "downloading":
-        return "bg-amber-400 animate-pulse";
+        return "bg-amber-400 dark:bg-amber-500 animate-pulse";
       case "success":
-        return "bg-green-500";
+        return "bg-green-500 dark:bg-green-400";
       case "error":
-        return "bg-red-500";
+        return "bg-red-500 dark:bg-red-400";
       default:
-        return "bg-gray-400";
+        return "bg-gray-400 dark:bg-gray-600";
     }
   };
 
@@ -340,93 +340,66 @@ const App: React.FC = () => {
                     cloudSyncStatus === "downloading";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       {/* Header */}
-      <header className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-6 shadow-sm">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          {/* Icon placeholder - replace with actual icon asset */}
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-white tracking-tight">Settings</h1>
-            <p className="text-sm text-white/70">Manage your data and preferences</p>
-          </div>
+      <header className="bg-white dark:bg-surface-850 border-b border-gray-100 dark:border-surface-800 px-6 py-4">
+        <div className="max-w-lg mx-auto">
+          <h1 className="text-base font-medium text-gray-800 dark:text-gray-100">Settings</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Backup and data management</p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-lg mx-auto px-6 py-6 space-y-6">
         {loading ? (
           <div className="animate-pulse space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 h-24" />
-            <div className="bg-white rounded-xl shadow-sm p-6 h-48" />
-            <div className="bg-white rounded-xl shadow-sm p-6 h-64" />
+            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-16" />
+            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-5 h-40" />
+            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-28" />
+            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-24" />
           </div>
         ) : (
           <>
             {/* Plan Display */}
-            <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900">Your Plan</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    {tier === "pro" ? "Unlimited tabs per session" : "Up to 100 saved tabs"}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Current plan</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mt-0.5">
+                    {tier === "pro" ? "Pro – Unlimited tabs" : "Free – Up to 100 tabs"}
                   </p>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${tierBadgeClass}`}
-                >
+                <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${tierBadgeClass}`}>
                   {tierLabel}
                 </span>
               </div>
             </section>
 
-            {/* Cloud Sync */}
-            <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            {/* Cloud Sync - Focal point */}
+            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-5">
               <div className="mb-5">
-                <h2 className="text-base font-semibold text-gray-900">Cloud Sync</h2>
-                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                  Manually sync your sessions to the cloud. Your data is encrypted on your device before upload.
+                <h2 className="text-sm font-medium text-gray-800 dark:text-gray-100">Cloud Sync</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Your sessions are encrypted before leaving your device
                 </p>
               </div>
 
-              {/* Sync Status Indicator */}
-              <div className="flex items-center gap-2.5 mb-5 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getSyncStatusColor()}`} />
-                <span className="text-sm text-gray-700 font-medium">
-                  {getSyncStatusText()}
-                </span>
+              {/* Sync Status */}
+              <div className="flex items-center gap-2 mb-5 text-sm text-gray-600 dark:text-gray-400">
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getSyncStatusColor()}`} />
+                <span>{getSyncStatusText()}</span>
               </div>
 
               {/* Sync Actions */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleCloudUpload}
                   disabled={isSyncing}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-primary-700 hover:shadow disabled:opacity-50 disabled:shadow-none transition-all"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors"
                 >
                   {cloudSyncStatus === "uploading" || cloudSyncStatus === "authenticating" ? (
                     <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
@@ -434,8 +407,8 @@ const App: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       <span>Upload to Cloud</span>
                     </>
@@ -445,11 +418,11 @@ const App: React.FC = () => {
                 <button
                   onClick={handleRestoreClick}
                   disabled={isSyncing}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-all"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-surface-700 disabled:opacity-50 transition-colors"
                 >
-                  {cloudSyncStatus === "downloading" || (cloudSyncStatus === "authenticating" && !cloudSyncStatus) ? (
+                  {cloudSyncStatus === "downloading" ? (
                     <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
@@ -457,35 +430,26 @@ const App: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                       </svg>
                       <span>Restore from Cloud</span>
                     </>
                   )}
                 </button>
               </div>
-
-              <p className="text-xs text-gray-400 mt-4 leading-relaxed">
-                Restoring from cloud will replace your local sessions. You can undo this action immediately after.
-              </p>
             </section>
 
-            {/* Local Backup Settings */}
-            <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold text-gray-900">Local Backup</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Automatic backups stored in your browser
-                </p>
-              </div>
+            {/* Local Backup */}
+            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
+              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Local Backup</h2>
 
               {/* Auto Backup Toggle */}
-              <div className="flex items-center justify-between py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-surface-700">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Auto Backup</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Automatically backup sessions on a schedule
+                  <p className="text-sm text-gray-700 dark:text-gray-200">Auto backup</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    Save sessions periodically
                   </p>
                 </div>
                 <Toggle
@@ -496,18 +460,13 @@ const App: React.FC = () => {
               </div>
 
               {/* Backup Frequency */}
-              <div className="flex items-center justify-between py-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Frequency</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    How often to create backups
-                  </p>
-                </div>
+              <div className="flex items-center justify-between py-2.5">
+                <p className="text-sm text-gray-700 dark:text-gray-200">Frequency</p>
                 <select
                   value={settings.backupFrequencyHours}
                   onChange={handleFrequencyChange}
                   disabled={!settings.autoBackup}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-50 disabled:bg-gray-50 transition-all"
+                  className="rounded border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-2 py-1 text-sm text-gray-600 dark:text-gray-300 focus:border-primary-400 dark:focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100 dark:focus:ring-primary-900 disabled:opacity-40 disabled:bg-gray-50 dark:disabled:bg-surface-700 transition-colors"
                 >
                   <option value={1}>Every hour</option>
                   <option value={6}>Every 6 hours</option>
@@ -518,210 +477,142 @@ const App: React.FC = () => {
             </section>
 
             {/* Data Management */}
-            <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold text-gray-900">Data Management</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Export, import, or reset your session data
-                </p>
-              </div>
+            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
+              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Data</h2>
 
-              {/* Export */}
-              <div className="flex items-center justify-between py-4 border-b border-gray-100">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Export Data</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Download all sessions as a JSON file
-                  </p>
-                </div>
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 hover:shadow disabled:opacity-50 disabled:shadow-none transition-all"
-                >
-                  {exporting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              {/* Export / Import row */}
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-surface-700">
+                <p className="text-sm text-gray-700 dark:text-gray-200">Export or import</p>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={handleImportClick}
+                    disabled={importing}
+                    className="flex items-center gap-1 rounded border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-2.5 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-surface-700 disabled:opacity-50 transition-colors"
+                  >
+                    {importing ? (
+                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      <span>Exporting…</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      <span>Export</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Import */}
-              <div className="flex items-center justify-between py-4 border-b border-gray-100">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Import Data</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Restore sessions from a backup file
-                  </p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button
-                  onClick={handleImportClick}
-                  disabled={importing}
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-all"
-                >
-                  {importing ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    )}
+                    <span>Import</span>
+                  </button>
+                  <button
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="flex items-center gap-1 rounded bg-primary-600 dark:bg-primary-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors"
+                  >
+                    {exporting ? (
+                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      <span>Importing…</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      <span>Import</span>
-                    </>
-                  )}
-                </button>
+                    )}
+                    <span>Export</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Reset Data - Danger Zone */}
-              <div className="flex items-center justify-between py-4">
+              {/* Reset Data - Isolated, low emphasis */}
+              <div className="flex items-center justify-between py-2.5">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Reset Data</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Delete all sessions (can be undone)
-                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200">Delete all sessions</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">This can be undone</p>
                 </div>
                 <button
                   onClick={handleClearClick}
                   disabled={clearing}
-                  className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 transition-all"
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span>Reset</span>
+                  Reset data
                 </button>
               </div>
             </section>
 
             {/* Footer */}
-            <footer className="text-center py-8">
-              <p className="text-sm text-gray-500 font-medium">TabFlow v0.1.1</p>
-              <p className="text-xs text-gray-400 mt-1">
-                A local-first tab manager with optional cloud sync
-              </p>
+            <footer className="text-center pt-2 pb-6">
+              <p className="text-xs text-gray-300 dark:text-gray-600">TabFlow v0.1.1</p>
             </footer>
           </>
         )}
       </main>
 
-      {/* Restore from Cloud Confirmation Dialog with Preview */}
+      {/* Restore Confirmation Dialog */}
       {showRestoreConfirm && restorePreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/30 dark:bg-black/50"
             onClick={cloudSyncStatus === "downloading" ? undefined : handleRestoreCancel}
           />
 
           {/* Dialog */}
-          <div className="relative w-[90%] max-w-[420px] bg-white rounded-xl shadow-2xl animate-scale-in">
-            {/* Icon + Title */}
-            <div className="px-6 pt-6 text-center">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
-                <svg
-                  className="w-7 h-7 text-amber-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">Restore from Cloud?</h2>
-            </div>
+          <div className="relative w-[90%] max-w-[340px] bg-white dark:bg-surface-850 rounded-lg shadow-xl dark:shadow-2xl animate-scale-in border border-gray-200 dark:border-surface-700">
+            <div className="p-4">
+              <h2 className="text-base font-medium text-gray-800 dark:text-gray-100 mb-3">Restore from cloud?</h2>
 
-            {/* Preview Summary */}
-            <div className="px-6 py-4">
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Cloud Backup Contents:</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Sessions</span>
-                    <span className="font-medium text-gray-900">{restorePreview.sessionCount}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Total Tabs</span>
-                    <span className="font-medium text-gray-900">{restorePreview.totalTabs}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Last Synced</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(restorePreview.lastSyncedAt).toLocaleString()}
-                    </span>
-                  </div>
+              {/* Preview */}
+              <div className="bg-gray-50 dark:bg-surface-800 rounded-md p-3 mb-3 text-sm">
+                <div className="flex justify-between py-0.5">
+                  <span className="text-gray-500 dark:text-gray-400">Sessions</span>
+                  <span className="text-gray-800 dark:text-gray-200">{restorePreview.sessionCount}</span>
+                </div>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-gray-500 dark:text-gray-400">Tabs</span>
+                  <span className="text-gray-800 dark:text-gray-200">{restorePreview.totalTabs}</span>
+                </div>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-gray-500 dark:text-gray-400">Synced</span>
+                  <span className="text-gray-800 dark:text-gray-200">
+                    {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </span>
                 </div>
               </div>
 
-              <p className="text-sm text-amber-700 bg-amber-50 rounded-lg p-3">
-                ⚠️ This will replace all your current local sessions. You can undo this action afterward.
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                This will replace your local sessions. You can undo afterward.
               </p>
-            </div>
 
-            {/* Actions */}
-            <div className="px-6 pb-6 flex gap-3">
-              <button
-                type="button"
-                onClick={handleRestoreCancel}
-                disabled={cloudSyncStatus === "downloading"}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleRestoreConfirm}
-                disabled={cloudSyncStatus === "downloading"}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-              >
-                {cloudSyncStatus === "downloading" && (
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                )}
-                Restore
-              </button>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRestoreCancel}
+                  disabled={cloudSyncStatus === "downloading"}
+                  className="flex-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-surface-700 rounded-md hover:bg-gray-200 dark:hover:bg-surface-600 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRestoreConfirm}
+                  disabled={cloudSyncStatus === "downloading"}
+                  className="flex-1 px-3 py-2 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-md hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {cloudSyncStatus === "downloading" && (
+                    <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  Restore
+                </button>
+              </div>
             </div>
           </div>
         </div>

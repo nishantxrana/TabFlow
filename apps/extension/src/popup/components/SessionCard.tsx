@@ -1,14 +1,12 @@
 /**
  * TabFlow – Session Card Component
  *
- * Displays a single session with expand/collapse for groups.
- * Supports inline rename and copy links.
- *
- * Design:
- * - Clean card with subtle border
- * - Clear visual hierarchy: name > metadata
- * - Grouped action buttons with consistent sizing
- * - Smooth hover and active states
+ * Sessions must feel like OBJECTS, not rows.
+ * Design goals:
+ * - Visually contained with clear boundaries
+ * - Clear hierarchy: title (primary) > metadata (secondary)
+ * - Actions muted by default, clear on hover
+ * - Subtle, intentional hover state on entire card
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -45,10 +43,8 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   const [showLimitHint, setShowLimitHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate total tabs
   const totalTabs = session.groups.reduce((sum, g) => sum + g.tabs.length, 0);
 
-  // Format date
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -62,13 +58,9 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -76,14 +68,10 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     }
   }, [isEditing]);
 
-  // Reset edit value when session name changes externally
   useEffect(() => {
-    if (!isEditing) {
-      setEditValue(session.name);
-    }
+    if (!isEditing) setEditValue(session.name);
   }, [session.name, isEditing]);
 
-  // Handle starting edit mode
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -91,7 +79,6 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     setShowLimitHint(false);
   };
 
-  // Handle input change with character limit
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value.length <= MAX_SESSION_NAME_LENGTH) {
@@ -103,7 +90,6 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     }
   };
 
-  // Handle save
   const handleSave = () => {
     const trimmed = editValue.trim();
     if (trimmed && trimmed !== session.name) {
@@ -113,25 +99,17 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     setShowLimitHint(false);
   };
 
-  // Handle cancel
   const handleCancel = () => {
     setEditValue(session.name);
     setIsEditing(false);
     setShowLimitHint(false);
   };
 
-  // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      handleCancel();
-    }
+    if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+    else if (e.key === "Escape") { e.preventDefault(); handleCancel(); }
   };
 
-  // Check if any tabs match search
   const hasMatchingTabs = searchQuery
     ? session.groups.some((group) =>
         group.tabs.some(
@@ -142,56 +120,40 @@ export const SessionCard: React.FC<SessionCardProps> = ({
       )
     : true;
 
-  // Auto-expand if searching and has matches
   const isExpanded = expanded || (searchQuery && hasMatchingTabs);
-
-  if (searchQuery && !hasMatchingTabs) {
-    return null;
-  }
+  if (searchQuery && !hasMatchingTabs) return null;
 
   const isLoading = restoring || deleting || renaming;
 
   return (
     <div
-      className={`rounded-lg border bg-white overflow-hidden transition-all duration-150 ${
-        isExpanded ? "border-gray-200 shadow-sm" : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-      }`}
+      className={`group rounded-lg border bg-white dark:bg-surface-850 transition-all duration-100 ${
+        isExpanded
+          ? "border-gray-200 dark:border-surface-700"
+          : "border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 hover:bg-gray-50/50 dark:hover:bg-surface-800/50"
+      } ${isLoading ? "opacity-60" : ""}`}
     >
-      {/* Session Header */}
+      {/* Card Header */}
       <div
-        className={`flex items-center gap-3 p-3 cursor-pointer select-none ${
-          isLoading ? "opacity-70" : ""
-        }`}
+        className="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer select-none"
         onClick={() => !isEditing && setExpanded(!expanded)}
       >
-        {/* Expand/Collapse Chevron */}
+        {/* Expand Chevron */}
         <button
-          className="flex-shrink-0 p-0.5 -ml-0.5 rounded hover:bg-gray-100 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
-          }}
+          className="mt-0.5 p-0.5 rounded text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           aria-label={isExpanded ? "Collapse" : "Expand"}
         >
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            className={`w-3.5 h-3.5 transition-transform duration-100 ${isExpanded ? "rotate-90" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
 
-        {/* Session Info */}
-        <div className="min-w-0 flex-1">
+        {/* Session Content */}
+        <div className="flex-1 min-w-0">
           {isEditing ? (
             <div className="relative" onClick={(e) => e.stopPropagation()}>
               <input
@@ -203,54 +165,37 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 onKeyDown={handleKeyDown}
                 disabled={renaming}
                 maxLength={MAX_SESSION_NAME_LENGTH}
-                className={`w-full text-sm font-medium text-gray-900 bg-white border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 ${
-                  showLimitHint ? "border-amber-400" : "border-gray-300"
+                className={`w-full text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-surface-800 border rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-300 dark:focus:ring-primary-700 ${
+                  showLimitHint ? "border-amber-400" : "border-gray-300 dark:border-surface-600"
                 }`}
               />
               {showLimitHint && (
-                <div className="absolute -bottom-5 left-0 text-[10px] text-amber-600">
-                  Maximum {MAX_SESSION_NAME_LENGTH} characters
-                </div>
+                <span className="absolute -bottom-4 left-0 text-[10px] text-amber-600 dark:text-amber-500">
+                  Max {MAX_SESSION_NAME_LENGTH} characters
+                </span>
               )}
             </div>
           ) : (
             <>
-              {/* Session Name */}
-              <div className="group/name flex items-center gap-1.5">
-                <h3
-                  className="text-sm font-medium text-gray-900 truncate cursor-text group-hover/name:text-primary-600 transition-colors"
-                  onClick={handleStartEdit}
-                  title={`${session.name} (click to rename)`}
-                >
-                  {session.name}
-                </h3>
-                <svg
-                  className="w-3 h-3 text-gray-300 opacity-0 group-hover/name:opacity-100 flex-shrink-0 transition-opacity"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </div>
-
-              {/* Metadata */}
-              <p className="text-xs text-gray-500 mt-0.5 tabular-nums">
+              {/* Title - Primary */}
+              <h3
+                className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate hover:text-gray-900 dark:hover:text-white cursor-text leading-snug"
+                onClick={handleStartEdit}
+                title={`${session.name} – click to rename`}
+              >
+                {session.name}
+              </h3>
+              {/* Metadata - Secondary */}
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">
                 {totalTabs} {totalTabs === 1 ? "tab" : "tabs"} · {formatDate(session.createdAt)}
               </p>
             </>
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Icons - Grouped, muted until hover */}
         <div
-          className="flex items-center gap-0.5 flex-shrink-0"
+          className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Copy Links */}
@@ -258,49 +203,28 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             onClick={() => onCopyLinks(session)}
             disabled={isLoading}
             title="Copy all links"
-            className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+            className="p-1.5 rounded text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-700 disabled:opacity-40 transition-colors"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-              />
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
           </button>
 
-          {/* Restore */}
+          {/* Restore - Slightly more prominent */}
           <button
             onClick={() => onRestore(session.id)}
             disabled={isLoading}
             title="Open all tabs"
-            className="p-2 rounded-md text-primary-600 hover:text-primary-700 hover:bg-primary-50 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+            className="p-1.5 rounded text-primary-500 dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 disabled:opacity-40 transition-colors"
           >
             {restoring ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
+              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
               </svg>
             )}
           </button>
@@ -310,41 +234,25 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             onClick={() => onDelete(session.id)}
             disabled={isLoading}
             title="Delete session"
-            className="p-2 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+            className="p-1.5 rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 transition-colors"
           >
             {deleting ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
+              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
               </svg>
             )}
           </button>
         </div>
       </div>
 
-      {/* Expanded Content */}
+      {/* Expanded Content - Tabs List */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-gray-100">
+        <div className="px-3 pb-2.5 pt-0 border-t border-gray-50 dark:border-surface-800">
           {session.groups.map((group) => (
             <GroupView key={group.id} group={group} searchQuery={searchQuery} />
           ))}

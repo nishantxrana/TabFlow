@@ -5,6 +5,7 @@ export default {
     "./options.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: "media",
   theme: {
     extend: {
       colors: {
@@ -22,6 +23,17 @@ export default {
           900: "#0c4a6e",
           950: "#082f49",
         },
+        // Dark mode surface colors
+        surface: {
+          50: "#fafafa",
+          100: "#f4f4f5",
+          200: "#e4e4e7",
+          700: "#3f3f46",
+          800: "#27272a",
+          850: "#1f1f23",
+          900: "#18181b",
+          950: "#0f0f11",
+        },
       },
       width: {
         popup: "400px",
@@ -33,4 +45,3 @@ export default {
   },
   plugins: [],
 };
-
