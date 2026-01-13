@@ -1,0 +1,62 @@
+name: Build Chrome Extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/extension/**"
+      - ".github/workflows/build-extension.yml"
+  workflow_dispatch:
+
+env:
+  EXTENSION_PATH: apps/extension
+  NODE_VERSION: "22.x"
+
+jobs:
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.EXTENSION_PATH }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.EXTENSION_PATH }}
+        run: npm ci
+
+      - name: Build
+        working-directory: ${{ env.EXTENSION_PATH }}
+        env:
+          VITE_CLOUD_API_URL: ${{ vars.VITE_CLOUD_API_URL }}
+        run: npm run build
+
+      - name: Generate artifact name
+        id: meta
+        run: |
+          echo "name=tabflow-extension-${{ github.ref_name }}-${GITHUB_SHA::7}-${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.name }}
+          path: ${{ env.EXTENSION_PATH }}/dist/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Summary
+        run: |
+          echo "### ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** \`${{ steps.meta.outputs.name }}.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** [\`${GITHUB_SHA::7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
