@@ -40,19 +40,16 @@ jobs:
           VITE_CLOUD_API_URL: ${{ vars.VITE_CLOUD_API_URL }}
         run: npm run build
 
-      - name: Package
-        id: package
-        working-directory: ${{ env.EXTENSION_PATH }}
+      - name: Generate artifact name
+        id: meta
         run: |
-          ZIP_NAME="tabflow-extension-${{ github.ref_name }}-${GITHUB_SHA::7}-${{ github.run_id }}.zip"
-          cd dist && zip -rq "../${ZIP_NAME}" .
-          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "name=tabflow-extension-${{ github.ref_name }}-${GITHUB_SHA::7}-${{ github.run_id }}" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.package.outputs.zip_name }}
-          path: ${{ env.EXTENSION_PATH }}/${{ steps.package.outputs.zip_name }}
+          name: ${{ steps.meta.outputs.name }}
+          path: ${{ env.EXTENSION_PATH }}/dist/
           retention-days: 30
           if-no-files-found: error
 
@@ -60,6 +57,6 @@ jobs:
         run: |
           echo "### ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Artifact:** \`${{ steps.package.outputs.zip_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** \`${{ steps.meta.outputs.name }}.zip\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** [\`${GITHUB_SHA::7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
