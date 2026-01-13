@@ -3,7 +3,7 @@ name: Build Chrome Extension
 on:
   push:
     branches:
-      - add-extention-build-action
+      - main
     paths:
       - "apps/extension/**"
       - ".github/workflows/build-extension.yml"
