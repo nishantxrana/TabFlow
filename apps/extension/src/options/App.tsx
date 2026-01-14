@@ -294,7 +294,7 @@ const App: React.FC = () => {
   const tierBadgeClass =
     tier === "pro"
       ? "bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300"
-      : "bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-gray-300";
+      : "bg-stone-100 dark:bg-surface-700 text-stone-700 dark:text-stone-300";
 
   // Helper to get human-friendly sync status
   const getSyncStatusText = () => {
@@ -321,17 +321,17 @@ const App: React.FC = () => {
   const getSyncStatusColor = () => {
     switch (cloudSyncStatus) {
       case "idle":
-        return "bg-gray-400 dark:bg-gray-600";
+        return "bg-stone-400 dark:bg-stone-600";
       case "authenticating":
       case "uploading":
       case "downloading":
         return "bg-amber-400 dark:bg-amber-500 animate-pulse";
       case "success":
-        return "bg-green-500 dark:bg-green-400";
+        return "bg-primary-500 dark:bg-primary-400";
       case "error":
-        return "bg-red-500 dark:bg-red-400";
+        return "bg-rose-500 dark:bg-rose-400";
       default:
-        return "bg-gray-400 dark:bg-gray-600";
+        return "bg-stone-400 dark:bg-stone-600";
     }
   };
 
@@ -341,11 +341,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-surface-850 border-b border-gray-100 dark:border-surface-800 px-6 py-4">
+      {/* Header - warm, grounding */}
+      <header className="bg-white dark:bg-surface-850 border-b border-stone-100 dark:border-surface-800 px-6 py-5">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-base font-medium text-gray-800 dark:text-gray-100">Settings</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Backup and data management</p>
+          <h1 className="text-base font-medium text-stone-800 dark:text-stone-100">Settings</h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Manage your backups and data</p>
         </div>
       </header>
 
@@ -554,47 +554,47 @@ const App: React.FC = () => {
 
       {/* Restore Confirmation Dialog */}
       {showRestoreConfirm && restorePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/30 dark:bg-black/50"
+            className="absolute inset-0 bg-stone-900/20 dark:bg-black/40 backdrop-blur-[2px]"
             onClick={cloudSyncStatus === "downloading" ? undefined : handleRestoreCancel}
           />
 
           {/* Dialog */}
-          <div className="relative w-[90%] max-w-[340px] bg-white dark:bg-surface-850 rounded-lg shadow-xl dark:shadow-2xl animate-scale-in border border-gray-200 dark:border-surface-700">
-            <div className="p-4">
-              <h2 className="text-base font-medium text-gray-800 dark:text-gray-100 mb-3">Restore from cloud?</h2>
+          <div className="relative w-full max-w-[360px] bg-white dark:bg-surface-850 rounded-2xl shadow-xl dark:shadow-2xl animate-scale-in overflow-hidden">
+            <div className="p-5">
+              <h2 className="text-base font-medium text-stone-800 dark:text-stone-100 mb-4">Restore from cloud?</h2>
 
               {/* Preview */}
-              <div className="bg-gray-50 dark:bg-surface-800 rounded-md p-3 mb-3 text-sm">
-                <div className="flex justify-between py-0.5">
-                  <span className="text-gray-500 dark:text-gray-400">Sessions</span>
-                  <span className="text-gray-800 dark:text-gray-200">{restorePreview.sessionCount}</span>
+              <div className="bg-stone-50 dark:bg-surface-800 rounded-xl p-4 mb-4 text-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-stone-500 dark:text-stone-400">Sessions</span>
+                  <span className="text-stone-800 dark:text-stone-200 font-medium">{restorePreview.sessionCount}</span>
                 </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-gray-500 dark:text-gray-400">Tabs</span>
-                  <span className="text-gray-800 dark:text-gray-200">{restorePreview.totalTabs}</span>
+                <div className="flex justify-between py-1">
+                  <span className="text-stone-500 dark:text-stone-400">Tabs</span>
+                  <span className="text-stone-800 dark:text-stone-200 font-medium">{restorePreview.totalTabs}</span>
                 </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-gray-500 dark:text-gray-400">Synced</span>
-                  <span className="text-gray-800 dark:text-gray-200">
+                <div className="flex justify-between py-1">
+                  <span className="text-stone-500 dark:text-stone-400">Synced</span>
+                  <span className="text-stone-800 dark:text-stone-200 font-medium">
                     {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-5">
                 This will replace your local sessions. You can undo afterward.
               </p>
 
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleRestoreCancel}
                   disabled={cloudSyncStatus === "downloading"}
-                  className="flex-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-surface-700 rounded-md hover:bg-gray-200 dark:hover:bg-surface-600 disabled:opacity-50 transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-surface-800 rounded-lg border border-stone-200 dark:border-surface-700 hover:bg-stone-200 hover:border-stone-300 dark:hover:bg-surface-700 dark:hover:border-stone-600 disabled:opacity-50 transition-all"
                 >
                   Cancel
                 </button>
@@ -602,7 +602,7 @@ const App: React.FC = () => {
                   type="button"
                   onClick={handleRestoreConfirm}
                   disabled={cloudSyncStatus === "downloading"}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-md hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
                 >
                   {cloudSyncStatus === "downloading" && (
                     <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">

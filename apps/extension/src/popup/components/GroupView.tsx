@@ -1,9 +1,10 @@
 /**
  * TabFlow – Group View Component
  *
- * Displays tabs within a group.
- * Design: Reduced visual noise, tighter line-height,
- * tabs feel like content not clutter.
+ * Design philosophy:
+ * - Tab lists should feel like organized content, not clutter
+ * - Subtle visual hierarchy without sharp contrasts
+ * - Comfortable spacing for readability
  */
 
 import React from "react";
@@ -30,17 +31,17 @@ export const GroupView: React.FC<GroupViewProps> = ({ group, searchQuery = "" })
   }
 
   return (
-    <div className="mt-2">
-      {/* Group Header - Minimal */}
-      <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{group.name}</span>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+    <div className="mt-3">
+      {/* Group Header - subtle, not demanding */}
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">{group.name}</span>
+        <span className="text-[10px] text-stone-400 dark:text-stone-500">
           {filteredTabs.length}
         </span>
       </div>
 
-      {/* Tabs List - Tight, clean */}
-      <div className="space-y-px ml-0.5 pl-2 border-l border-gray-100 dark:border-surface-700">
+      {/* Tabs List - organized, calm */}
+      <div className="space-y-0.5 ml-0.5 pl-2.5 border-l-2 border-stone-100 dark:border-surface-700">
         {filteredTabs.map((tab, index) => (
           <TabItem
             key={`${tab.url}-${index}`}

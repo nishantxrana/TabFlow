@@ -1,38 +1,35 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./popup.html",
-    "./options.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./popup.html", "./options.html", "./src/**/*.{js,ts,jsx,tsx}"],
   darkMode: "media",
   theme: {
     extend: {
       colors: {
-        // TabFlow brand colors
+        // TabFlow brand colors - refined blue
+        // Clean, professional, trustworthy like Stripe/Linear
         primary: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          200: "#bae6fd",
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          800: "#075985",
-          900: "#0c4a6e",
-          950: "#082f49",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+          950: "#172554",
         },
-        // Dark mode surface colors
+        // Dark mode surface colors - warm, cozy
         surface: {
-          50: "#fafafa",
-          100: "#f4f4f5",
-          200: "#e4e4e7",
-          700: "#3f3f46",
-          800: "#27272a",
-          850: "#1f1f23",
-          900: "#18181b",
-          950: "#0f0f11",
+          50: "#fafaf9",
+          100: "#f5f5f4",
+          200: "#e7e5e4",
+          700: "#44403c",
+          800: "#292524",
+          850: "#1c1917",
+          900: "#171412",
+          950: "#0c0a09",
         },
       },
       width: {
@@ -40,6 +37,10 @@ export default {
       },
       maxHeight: {
         popup: "600px",
+      },
+      borderRadius: {
+        xl: "1rem",
+        "2xl": "1.25rem",
       },
     },
   },

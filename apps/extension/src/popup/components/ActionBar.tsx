@@ -1,8 +1,10 @@
 /**
  * TabFlow – Action Bar Component
  *
- * Primary action: Save Session (compact, prominent)
- * Secondary action: Undo (visually receded)
+ * Design philosophy:
+ * - Primary action should invite, not demand
+ * - Button should feel warm and confident
+ * - Secondary action should be available but quiet
  */
 
 import React from "react";
@@ -24,15 +26,15 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 }) => {
   return (
     <div className="flex items-center gap-2">
-      {/* Save Session - Compact Primary Action */}
+      {/* Save Session - Warm, inviting primary action */}
       <button
         onClick={onSave}
         disabled={saving}
-        className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors"
+        className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-primary-500 to-primary-600 dark:from-primary-500 dark:to-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:from-primary-600 hover:to-primary-700 dark:hover:from-primary-600 dark:hover:to-primary-700 disabled:opacity-50 transition-all duration-200"
       >
         {saving ? (
           <>
-            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -40,7 +42,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           </>
         ) : (
           <>
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             <span>Save Session</span>
@@ -48,12 +50,12 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         )}
       </button>
 
-      {/* Undo - Secondary, lower emphasis */}
+      {/* Undo - Quiet, supportive secondary action */}
       <button
         onClick={onUndo}
         disabled={undoing || !canUndo}
         title={canUndo ? "Undo last action" : "Nothing to undo"}
-        className="p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-surface-800 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-colors"
+        className="p-2.5 rounded-lg text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-surface-800 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-stone-400 transition-all duration-200"
         aria-label="Undo"
       >
         {undoing ? (

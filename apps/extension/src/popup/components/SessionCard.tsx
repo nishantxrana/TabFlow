@@ -1,12 +1,14 @@
 /**
  * TabFlow – Session Card Component
  *
- * Sessions must feel like OBJECTS, not rows.
- * Design goals:
- * - Visually contained with clear boundaries
- * - Clear hierarchy: title (primary) > metadata (secondary)
- * - Actions muted by default, clear on hover
- * - Subtle, intentional hover state on entire card
+ * Sessions represent something valuable the user saved.
+ * They should feel like treasured objects, safe and accessible.
+ * 
+ * Design philosophy:
+ * - Cards should feel stable and grounded
+ * - Actions should be available but not demanding
+ * - Hover states should be gentle, not harsh
+ * - The overall feeling: "Your tabs are safe here"
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -127,25 +129,25 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
   return (
     <div
-      className={`group rounded-lg border bg-white dark:bg-surface-850 transition-all duration-100 ${
+      className={`group rounded-xl border bg-white dark:bg-surface-850 transition-all duration-200 ${
         isExpanded
-          ? "border-gray-200 dark:border-surface-700"
-          : "border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 hover:bg-gray-50/50 dark:hover:bg-surface-800/50"
+          ? "border-stone-200 dark:border-surface-700 shadow-sm"
+          : "border-stone-100 dark:border-surface-800 hover:border-stone-200 dark:hover:border-surface-700 hover:shadow-sm"
       } ${isLoading ? "opacity-60" : ""}`}
     >
       {/* Card Header */}
       <div
-        className="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer select-none"
+        className="flex items-start gap-3 px-4 py-3 cursor-pointer select-none"
         onClick={() => !isEditing && setExpanded(!expanded)}
       >
-        {/* Expand Chevron */}
+        {/* Expand Chevron - gentle */}
         <button
-          className="mt-0.5 p-0.5 rounded text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+          className="mt-0.5 p-1 -ml-1 rounded-lg text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 hover:bg-stone-50 dark:hover:bg-surface-800 transition-all duration-200"
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           aria-label={isExpanded ? "Collapse" : "Expand"}
         >
           <svg
-            className={`w-3.5 h-3.5 transition-transform duration-100 ${isExpanded ? "rotate-90" : ""}`}
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -165,37 +167,37 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 onKeyDown={handleKeyDown}
                 disabled={renaming}
                 maxLength={MAX_SESSION_NAME_LENGTH}
-                className={`w-full text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-surface-800 border rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-300 dark:focus:ring-primary-700 ${
-                  showLimitHint ? "border-amber-400" : "border-gray-300 dark:border-surface-600"
+                className={`w-full text-sm font-medium text-stone-800 dark:text-stone-100 bg-white dark:bg-surface-800 border rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:focus:ring-primary-400/30 ${
+                  showLimitHint ? "border-amber-400" : "border-stone-200 dark:border-surface-600"
                 }`}
               />
               {showLimitHint && (
-                <span className="absolute -bottom-4 left-0 text-[10px] text-amber-600 dark:text-amber-500">
+                <span className="absolute -bottom-5 left-0 text-[10px] text-amber-600 dark:text-amber-500">
                   Max {MAX_SESSION_NAME_LENGTH} characters
                 </span>
               )}
             </div>
           ) : (
             <>
-              {/* Title - Primary */}
+              {/* Title - warm, inviting */}
               <h3
-                className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate hover:text-gray-900 dark:hover:text-white cursor-text leading-snug"
+                className="text-sm font-medium text-stone-700 dark:text-stone-100 truncate hover:text-stone-900 dark:hover:text-white cursor-text leading-snug"
                 onClick={handleStartEdit}
                 title={`${session.name} – click to rename`}
               >
                 {session.name}
               </h3>
-              {/* Metadata - Secondary */}
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">
+              {/* Metadata - reassuring context */}
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5 leading-snug">
                 {totalTabs} {totalTabs === 1 ? "tab" : "tabs"} · {formatDate(session.createdAt)}
               </p>
             </>
           )}
         </div>
 
-        {/* Action Icons - Grouped, muted until hover */}
+        {/* Action Icons - gentle, supportive */}
         <div
-          className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Copy Links */}
@@ -203,19 +205,19 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             onClick={() => onCopyLinks(session)}
             disabled={isLoading}
             title="Copy all links"
-            className="p-1.5 rounded text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-700 disabled:opacity-40 transition-colors"
+            className="p-2 rounded-lg text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 hover:bg-stone-50 dark:hover:bg-surface-700 disabled:opacity-40 transition-all duration-200"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
           </button>
 
-          {/* Restore - Slightly more prominent */}
+          {/* Restore - warm accent color */}
           <button
             onClick={() => onRestore(session.id)}
             disabled={isLoading}
             title="Open all tabs"
-            className="p-1.5 rounded text-primary-500 dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 disabled:opacity-40 transition-colors"
+            className="p-2 rounded-lg text-primary-500 dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 disabled:opacity-40 transition-all duration-200"
           >
             {restoring ? (
               <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -229,12 +231,12 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             )}
           </button>
 
-          {/* Delete */}
+          {/* Delete - gentle, not aggressive */}
           <button
             onClick={() => onDelete(session.id)}
             disabled={isLoading}
-            title="Delete session"
-            className="p-1.5 rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 transition-colors"
+            title="Remove session"
+            className="p-2 rounded-lg text-stone-300 dark:text-stone-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/15 disabled:opacity-40 transition-all duration-200"
           >
             {deleting ? (
               <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -252,7 +254,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
       {/* Expanded Content - Tabs List */}
       {isExpanded && (
-        <div className="px-3 pb-2.5 pt-0 border-t border-gray-50 dark:border-surface-800">
+        <div className="px-4 pb-3 pt-0 border-t border-stone-50 dark:border-surface-800">
           {session.groups.map((group) => (
             <GroupView key={group.id} group={group} searchQuery={searchQuery} />
           ))}
