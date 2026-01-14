@@ -13,7 +13,8 @@
     "build:all": "npm run extension:build && npm run api:build",
     "format": "npm run format --prefix apps/extension && npm run format --prefix apps/api",
     "format:check": "npm run format:check --prefix apps/extension && npm run format:check --prefix apps/api",
-    "install:all": "npm install --prefix apps/extension && npm install --prefix apps/api"
+    "install:all": "npm install && npm install --prefix apps/extension && npm install --prefix apps/api",
+    "prepare": "husky"
   },
   "keywords": [
     "chrome-extension",
@@ -22,5 +23,22 @@
     "typescript"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2"
+  },
+  "lint-staged": {
+    "apps/extension/**/*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "apps/extension/**/*.css": [
+      "prettier --write"
+    ],
+    "apps/api/**/*.ts": [
+      "prettier --write"
+    ]
+  }
 }
