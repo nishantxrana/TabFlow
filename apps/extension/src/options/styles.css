@@ -1,37 +1,80 @@
 /**
  * TabFlow – Options Page Styles
- * Tailwind CSS imports and custom styles.
+ * 
+ * Design philosophy:
+ * - Settings should feel trustworthy and professional
+ * - Warm tones create a sense of reliability
+ * - Clear hierarchy without harshness
+ * - Dark mode should feel cozy, not sterile
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-/* Custom animations */
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+/* Light mode - warm stone tones */
+body {
+  color: #44403c;
+  background-color: #fafaf9;
+}
+
+/* Dark mode - warm, cozy dark */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e7e5e4;
+    background-color: #171412;
   }
 }
+
+/* ============================================================================
+   Focus States - Warm, visible but not harsh
+   ============================================================================ */
+
+*:focus-visible {
+  outline: 2px solid #14b89c;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  *:focus-visible {
+    outline-color: #2ccfb3;
+  }
+}
+
+/* ============================================================================
+   Button States
+   ============================================================================ */
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   Animations - Gentle, not jarring
+   ============================================================================ */
 
 @keyframes scale-in {
   from {
-    transform: scale(0.95);
+    transform: scale(0.96);
     opacity: 0;
   }
   to {
@@ -40,21 +83,114 @@ body {
   }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.2s ease-out;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-scale-in {
   animation: scale-in 0.15s ease-out;
 }
 
-/* Focus styles */
-*:focus-visible {
-  outline: 2px solid #0ea5e9;
-  outline-offset: 2px;
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
 }
 
-/* Button active state */
-button:active:not(:disabled) {
-  transform: scale(0.98);
+/* ============================================================================
+   Scrollbar - Subtle, unobtrusive
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d6d3d1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #44403c;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #57534e;
+  }
+}
+
+/*---break---
+ */
+
+@layer base {
+  :root {
+    --background: 30 20% 98%;
+    --foreground: 25 10% 25%;
+    --card: 0 0% 100%;
+    --card-foreground: 25 10% 25%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 10% 25%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 10% 94%;
+    --secondary-foreground: 25 10% 35%;
+    --muted: 30 10% 94%;
+    --muted-foreground: 25 10% 45%;
+    --accent: 30 10% 94%;
+    --accent-foreground: 25 10% 25%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 10% 90%;
+    --input: 30 10% 90%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+}
+
+/* Apply dark mode based on system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 20 10% 8%;
+    --foreground: 30 10% 90%;
+    --card: 20 10% 10%;
+    --card-foreground: 30 10% 90%;
+    --popover: 20 10% 10%;
+    --popover-foreground: 30 10% 90%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 20 10% 16%;
+    --secondary-foreground: 30 10% 85%;
+    --muted: 20 10% 16%;
+    --muted-foreground: 30 10% 55%;
+    --accent: 20 10% 16%;
+    --accent-foreground: 30 10% 90%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 10% 18%;
+    --input: 20 10% 18%;
+    --ring: 217 91% 60%;
+  }
+}
+
+/*---break---
+ */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

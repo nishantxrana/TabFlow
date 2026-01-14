@@ -11,6 +11,8 @@
     "api:start": "npm run start --prefix apps/api",
     "api:watch": "npm run watch --prefix apps/api",
     "build:all": "npm run extension:build && npm run api:build",
+    "format": "npm run format --prefix apps/extension && npm run format --prefix apps/api",
+    "format:check": "npm run format:check --prefix apps/extension && npm run format:check --prefix apps/api",
     "install:all": "npm install --prefix apps/extension && npm install --prefix apps/api"
   },
   "keywords": [
@@ -22,4 +24,3 @@
   "author": "",
   "license": "MIT"
 }
-

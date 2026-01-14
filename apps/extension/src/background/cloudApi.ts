@@ -113,9 +113,7 @@ export class AuthenticationError extends Error {
  * @throws AuthenticationError if auth fails
  * @throws Error if upload fails
  */
-export async function uploadToCloud(
-  request: CloudUploadRequest
-): Promise<CloudUploadResponse> {
+export async function uploadToCloud(request: CloudUploadRequest): Promise<CloudUploadResponse> {
   // Get auth headers (dev bypass or real Google auth)
   const { headers: authHeaders } = await getApiHeaders();
 
@@ -131,10 +129,7 @@ export async function uploadToCloud(
   // Handle 401 - clear token and prompt re-auth
   if (response.status === 401) {
     await clearAuthToken();
-    throw new AuthenticationError(
-      "Session expired. Please sign in again.",
-      "SESSION_EXPIRED"
-    );
+    throw new AuthenticationError("Session expired. Please sign in again.", "SESSION_EXPIRED");
   }
 
   if (!response.ok) {
@@ -172,16 +167,12 @@ export async function downloadFromCloud(): Promise<CloudDownloadResponse | null>
   // Handle 401 - clear token and prompt re-auth
   if (response.status === 401) {
     await clearAuthToken();
-    throw new AuthenticationError(
-      "Session expired. Please sign in again.",
-      "SESSION_EXPIRED"
-    );
+    throw new AuthenticationError("Session expired. Please sign in again.", "SESSION_EXPIRED");
   }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    const errorMessage =
-      (errorBody as CloudApiError).error || "Download failed";
+    const errorMessage = (errorBody as CloudApiError).error || "Download failed";
     throw new Error(errorMessage);
   }
 

@@ -174,14 +174,15 @@ export async function handleCloudDownloadPreview(): Promise<PreviewResult> {
     // 5. Calculate summary
     const sessionCount = backupBlob.sessions.length;
     const totalTabs = backupBlob.sessions.reduce((total, session) => {
-      return total + session.groups.reduce((groupTotal, group) => {
-        return groupTotal + group.tabs.length;
-      }, 0);
+      return (
+        total +
+        session.groups.reduce((groupTotal, group) => {
+          return groupTotal + group.tabs.length;
+        }, 0)
+      );
     }, 0);
 
-    console.log(
-      `[CloudSync] Preview ready: ${sessionCount} sessions, ${totalTabs} tabs`
-    );
+    console.log(`[CloudSync] Preview ready: ${sessionCount} sessions, ${totalTabs} tabs`);
 
     return {
       success: true,
@@ -224,9 +225,7 @@ export async function handleCloudApplyRestore(
     // Apply to local storage
     await applyCloudDownload(backupBlob.sessions);
 
-    console.log(
-      `[CloudSync] Restore applied: ${backupBlob.sessions.length} sessions`
-    );
+    console.log(`[CloudSync] Restore applied: ${backupBlob.sessions.length} sessions`);
 
     return {
       success: true,
@@ -288,9 +287,7 @@ export async function handleCloudDownload(): Promise<DownloadResult> {
     // 4. Parse and validate
     const backupBlob = parseImportData(decryptedJson);
 
-    console.log(
-      `[CloudSync] Download successful: ${backupBlob.sessions.length} sessions`
-    );
+    console.log(`[CloudSync] Download successful: ${backupBlob.sessions.length} sessions`);
 
     return {
       success: true,
@@ -333,4 +330,3 @@ export async function applyCloudDownload(sessions: Session[]): Promise<Session[]
 
   return previousSessions;
 }
-

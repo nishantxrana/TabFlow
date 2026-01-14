@@ -42,9 +42,7 @@ export type GetAuthHeadersResult = AuthResult | AuthError;
  * @param interactive - If true, show sign-in prompt if needed
  * @returns Promise resolving to auth headers or error
  */
-export async function getAuthHeaders(
-  interactive: boolean = true
-): Promise<GetAuthHeadersResult> {
+export async function getAuthHeaders(interactive: boolean = true): Promise<GetAuthHeadersResult> {
   try {
     console.log("[Auth] Requesting auth token...");
 
@@ -136,4 +134,3 @@ export async function isSignedIn(): Promise<boolean> {
     return false;
   }
 }
-

@@ -1,7 +1,9 @@
 /**
  * TabFlow – Loading State Component
  *
- * Skeleton UI shown while data is loading.
+ * Design philosophy:
+ * - Loading should feel calm and patient
+ * - Soft pulsing animation, not jarring
  */
 
 import React from "react";
@@ -12,16 +14,18 @@ interface LoadingStateProps {
 
 export const LoadingState: React.FC<LoadingStateProps> = ({ count = 3 }) => {
   return (
-    <div className="space-y-3 animate-pulse">
+    <div className="animate-pulse space-y-2.5">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-lg border border-gray-200 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="h-4 bg-gray-200 rounded w-32" />
-            <div className="h-3 bg-gray-200 rounded w-16" />
-          </div>
-          <div className="flex gap-2">
-            <div className="h-3 bg-gray-100 rounded w-20" />
-            <div className="h-3 bg-gray-100 rounded w-24" />
+        <div
+          key={i}
+          className="rounded-xl border border-stone-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded-lg bg-stone-100 dark:bg-surface-700" />
+            <div className="flex-1">
+              <div className="mb-2 h-4 w-32 rounded-lg bg-stone-100 dark:bg-surface-700" />
+              <div className="h-3 w-24 rounded-lg bg-stone-50 dark:bg-surface-800" />
+            </div>
           </div>
         </div>
       ))}

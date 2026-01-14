@@ -1,7 +1,10 @@
 /**
  * TabFlow – Search Bar Component
  *
- * Filters sessions/tabs by title or domain.
+ * Design philosophy:
+ * - Search should feel like a helpful utility, not a demand
+ * - Gentle placeholder text that guides without pressure
+ * - Soft focus states that feel welcoming
  */
 
 import React, { useState, useEffect } from "react";
@@ -14,7 +17,7 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
-  placeholder = "Search tabs...",
+  placeholder = "Find a session…",
 }) => {
   const [value, setValue] = useState("");
 
@@ -34,40 +37,47 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      {/* Search Icon - gentle gray */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
         <svg
-          className="h-4 w-4 text-gray-400"
+          className="h-4 w-4 text-stone-300 dark:text-stone-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          strokeWidth={1.5}
         >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
       </div>
+
+      {/* Input - soft, welcoming */}
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
+        className="w-full rounded-xl border-0 bg-stone-50 py-2.5 pl-10 pr-9 text-sm text-stone-700 transition-all duration-200 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:bg-surface-800 dark:text-stone-200 dark:placeholder:text-stone-500 dark:focus:bg-surface-700 dark:focus:ring-primary-400/20"
       />
+
+      {/* Clear Button - gentle hover */}
       {value && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 transition-colors duration-200 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
+          aria-label="Clear search"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       )}
@@ -76,4 +86,3 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 };
 
 export default SearchBar;
-

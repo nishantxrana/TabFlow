@@ -1,10 +1,21 @@
 /**
  * TabFlow – Confirm Dialog for Options Page
  *
- * Modal confirmation dialog for destructive actions.
+ * Uses shadcn/ui AlertDialog for accessibility and polish.
+ * Feels like a helpful pause, not a warning.
  */
 
-import React, { useEffect } from "react";
+import React from "react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@shared/components/ui";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -29,98 +40,28 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   loading = false,
 }) => {
-  // Handle ESC key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !loading) {
-        onCancel();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, loading, onCancel]);
-
-  if (!isOpen) return null;
-
-  const confirmButtonClass =
+  // Determine action button styling based on variant
+  const actionClassName =
     variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
+      ? "bg-rose-500 hover:bg-rose-600 text-white"
       : variant === "warning"
-      ? "bg-amber-600 hover:bg-amber-700 text-white"
-      : "bg-primary-600 hover:bg-primary-700 text-white";
+        ? "bg-amber-500 hover:bg-amber-600 text-white"
+        : "bg-primary-500 hover:bg-primary-600 text-white";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={loading ? undefined : onCancel}
-      />
-
-      {/* Dialog */}
-      <div className="relative w-[90%] max-w-[400px] bg-white rounded-xl shadow-2xl animate-scale-in">
-        {/* Icon + Title */}
-        <div className="px-6 pt-6 text-center">
-          {variant === "danger" && (
-            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-              <svg
-                className="w-7 h-7 text-red-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-          )}
-          {variant === "warning" && (
-            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
-              <svg
-                className="w-7 h-7 text-amber-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                />
-              </svg>
-            </div>
-          )}
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        </div>
-
-        {/* Message */}
-        <div className="px-6 py-4">
-          <p className="text-sm text-gray-600 text-center">{message}</p>
-        </div>
-
-        {/* Actions */}
-        <div className="px-6 pb-6 flex gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && !loading && onCancel()}>
+      <AlertDialogContent className="max-w-[380px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-lg">{title}</AlertDialogTitle>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading} onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={loading}
-            className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 ${confirmButtonClass}`}
-          >
+          </AlertDialogCancel>
+          <AlertDialogAction disabled={loading} onClick={onConfirm} className={actionClassName}>
             {loading && (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <svg className="mr-1.5 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -137,12 +78,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               </svg>
             )}
             {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
 export default ConfirmDialog;
-

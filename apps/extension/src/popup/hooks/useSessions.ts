@@ -56,4 +56,3 @@ export function useSessions(): UseSessionsResult {
     refetch: fetchSessions,
   };
 }
-

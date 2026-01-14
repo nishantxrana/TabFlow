@@ -9,7 +9,9 @@
     "clean": "rimraf dist",
     "prestart": "npm run build",
     "start": "func start",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "format": "prettier --write \"src/**/*.ts\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"*.{json,md}\""
   },
   "dependencies": {
     "@azure/functions": "^4.5.0",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "azure-functions-core-tools": "^4.0.5571",
+    "prettier": "^3.7.4",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   },
@@ -26,4 +29,3 @@
     "node": ">=18.0.0"
   }
 }
-

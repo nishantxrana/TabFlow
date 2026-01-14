@@ -87,10 +87,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     console.log("[TabFlow] First-time setup complete");
   } else if (details.reason === "update") {
     // Extension updated
-    console.log(
-      "[TabFlow] Updated to version:",
-      chrome.runtime.getManifest().version
-    );
+    console.log("[TabFlow] Updated to version:", chrome.runtime.getManifest().version);
 
     // Ensure backup alarm exists after update
     await setupBackupAlarm();

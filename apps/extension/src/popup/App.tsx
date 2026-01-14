@@ -93,15 +93,15 @@ const App: React.FC = () => {
         setUndoCount((c) => Math.max(c - 1, 0));
         const actionName =
           result.undone.type === "SAVE_SESSION"
-            ? "Save"
+            ? "save"
             : result.undone.type === "DELETE_SESSION"
-            ? "Delete"
-            : result.undone.type === "RENAME_SESSION"
-            ? "Rename"
-            : result.undone.type === "IMPORT"
-            ? "Import"
-            : "Action";
-        setSuccess(`Undid: ${actionName}`);
+              ? "delete"
+              : result.undone.type === "RENAME_SESSION"
+                ? "rename"
+                : result.undone.type === "IMPORT"
+                  ? "import"
+                  : "action";
+        setSuccess(`Restored — ${actionName} undone`);
       } else {
         setError("Nothing to undo");
       }
@@ -142,7 +142,7 @@ const App: React.FC = () => {
       await sendMessage(MessageAction.DELETE_SESSION, { sessionId: deleteSessionId });
       await refetch();
       setUndoCount((c) => Math.min(c + 1, 10));
-      setSuccess("Session deleted");
+      setSuccess("Session removed — you can undo this");
       setDeleteSessionId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete session");
@@ -197,41 +197,69 @@ const App: React.FC = () => {
   }, []);
 
   // Find session name for delete confirmation
-  const sessionToDelete = deleteSessionId
-    ? sessions.find((s) => s.id === deleteSessionId)
-    : null;
+  const sessionToDelete = deleteSessionId ? sessions.find((s) => s.id === deleteSessionId) : null;
 
   return (
-    <div className="w-popup min-h-[300px] max-h-popup flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-white/20 flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-            </div>
-            <h1 className="text-lg font-semibold text-white">TabFlow</h1>
+    <div className="flex max-h-popup min-h-[300px] w-popup flex-col bg-surface-50 dark:bg-surface-900">
+      {/* Top Bar - Warm, grounding header */}
+      <header className="flex flex-shrink-0 items-center justify-between border-b border-stone-100 bg-white px-4 py-3 dark:border-surface-800 dark:bg-surface-850">
+        {/* Left: Branding */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 shadow-sm">
+            <svg
+              className="h-3.5 w-3.5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
           </div>
-          <span className="text-xs text-white/60">{sessions.length} sessions</span>
+          <span className="text-sm font-medium text-stone-700 dark:text-stone-200">TabFlow</span>
         </div>
+
+        {/* Center: Session count - reassuring */}
+        <span className="text-xs tabular-nums text-stone-400 dark:text-stone-500">
+          {sessions.length} {sessions.length === 1 ? "session" : "sessions"} saved
+        </span>
+
+        {/* Right: Settings gear */}
+        <button
+          onClick={() => chrome.runtime.openOptionsPage()}
+          className="-mr-1 rounded-lg p-2 text-stone-400 transition-all duration-200 hover:bg-stone-50 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-surface-800 dark:hover:text-stone-300"
+          title="Settings"
+          aria-label="Open settings"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4">
-        {/* Action Bar */}
-        <div className="mb-4">
+      <main className="flex-1 overflow-auto px-3 py-3">
+        {/* Primary Action Area */}
+        <div className="mb-3">
           <ActionBar
             onSave={handleSaveClick}
             onUndo={handleUndo}
@@ -241,20 +269,35 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-4">
+        {/* Search - Gentle utility */}
+        <div className="mb-3">
           <SearchBar onSearch={handleSearch} />
         </div>
 
-        {/* Session List */}
+        {/* Sessions List */}
         {loading ? (
           <LoadingState count={2} />
         ) : fetchError ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-red-600">{fetchError}</p>
+          <div className="py-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 dark:bg-surface-800">
+              <svg
+                className="h-5 w-5 text-stone-400 dark:text-stone-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                />
+              </svg>
+            </div>
+            <p className="mb-2 text-sm text-stone-600 dark:text-stone-400">Something went wrong</p>
             <button
               onClick={refetch}
-              className="mt-2 text-sm text-primary-600 hover:underline"
+              className="text-sm text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
             >
               Try again
             </button>
@@ -274,18 +317,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white px-4 py-2 text-xs text-gray-400 text-center flex-shrink-0">
-        <span>TabFlow v0.1.0</span>
-        <span className="mx-2">·</span>
-        <button
-          onClick={() => chrome.runtime.openOptionsPage()}
-          className="text-primary-600 hover:underline"
-        >
-          Settings
-        </button>
-      </footer>
-
       {/* Save Modal */}
       <SaveModal
         isOpen={showSaveModal}
@@ -294,14 +325,14 @@ const App: React.FC = () => {
         saving={saving}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation - Reassuring, not alarming */}
       <ConfirmDialog
         isOpen={!!deleteSessionId}
-        title="Delete Session?"
-        message={`"${sessionToDelete?.name || "Session"}" and all its tabs will be permanently deleted. You can undo this action.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        variant="danger"
+        title="Remove this session?"
+        message={`"${sessionToDelete?.name || "Session"}" will be removed. Don't worry — you can undo this right after.`}
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        variant="gentle"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteSessionId(null)}
         loading={deletingId === deleteSessionId}

@@ -27,16 +27,10 @@ export interface GoogleVerificationResult {
 export interface GoogleVerificationError {
   success: false;
   error: string;
-  code:
-    | "INVALID_TOKEN"
-    | "EXPIRED_TOKEN"
-    | "INVALID_AUDIENCE"
-    | "VERIFICATION_FAILED";
+  code: "INVALID_TOKEN" | "EXPIRED_TOKEN" | "INVALID_AUDIENCE" | "VERIFICATION_FAILED";
 }
 
-export type VerifyGoogleTokenResult =
-  | GoogleVerificationResult
-  | GoogleVerificationError;
+export type VerifyGoogleTokenResult = GoogleVerificationResult | GoogleVerificationError;
 
 /**
  * Response from Google's tokeninfo endpoint
@@ -90,17 +84,13 @@ function getGoogleClientId(): string {
  * @param accessToken - The Google OAuth access token from the client
  * @returns Verification result with user info or error
  */
-export async function verifyGoogleToken(
-  accessToken: string
-): Promise<VerifyGoogleTokenResult> {
+export async function verifyGoogleToken(accessToken: string): Promise<VerifyGoogleTokenResult> {
   const expectedClientId = getGoogleClientId();
 
   try {
     // Call Google's tokeninfo endpoint to verify the access token
     const response = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(
-        accessToken
-      )}`
+      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
     );
 
     const tokenInfo: GoogleTokenInfo = await response.json();
@@ -108,7 +98,7 @@ export async function verifyGoogleToken(
     // Check for error response
     if (!response.ok || tokenInfo.error_description) {
       const isExpired = tokenInfo.error_description?.includes("expired");
-      
+
       if (isExpired) {
         return {
           success: false,

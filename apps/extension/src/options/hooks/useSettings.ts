@@ -58,7 +58,7 @@ export function useSettings(): UseSettingsResult {
   const updateSettings = useCallback(
     async (updates: Partial<Settings>) => {
       const newSettings = { ...settings, ...updates };
-      
+
       try {
         await sendMessage(MessageAction.UPDATE_SETTINGS, newSettings);
         setSettings(newSettings);
@@ -80,4 +80,3 @@ export function useSettings(): UseSettingsResult {
     refetch: fetchData,
   };
 }
-

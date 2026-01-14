@@ -179,4 +179,3 @@ export async function testEncryption(): Promise<boolean> {
     return false;
   }
 }
-

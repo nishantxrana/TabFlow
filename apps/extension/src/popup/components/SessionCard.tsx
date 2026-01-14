@@ -1,8 +1,14 @@
 /**
  * TabFlow – Session Card Component
  *
- * Displays a single session with expand/collapse for groups.
- * Supports inline rename and copy links.
+ * Sessions represent something valuable the user saved.
+ * They should feel like treasured objects, safe and accessible.
+ *
+ * Design philosophy:
+ * - Cards should feel stable and grounded
+ * - Actions should be available but not demanding
+ * - Hover states should be gentle, not harsh
+ * - The overall feeling: "Your tabs are safe here"
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -39,10 +45,8 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   const [showLimitHint, setShowLimitHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate total tabs
   const totalTabs = session.groups.reduce((sum, g) => sum + g.tabs.length, 0);
 
-  // Format date
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -56,13 +60,9 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -70,14 +70,10 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     }
   }, [isEditing]);
 
-  // Reset edit value when session name changes externally
   useEffect(() => {
-    if (!isEditing) {
-      setEditValue(session.name);
-    }
+    if (!isEditing) setEditValue(session.name);
   }, [session.name, isEditing]);
 
-  // Handle starting edit mode
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -85,21 +81,17 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     setShowLimitHint(false);
   };
 
-  // Handle input change with character limit
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value.length <= MAX_SESSION_NAME_LENGTH) {
       setEditValue(value);
       setShowLimitHint(false);
     } else {
-      // Show hint when limit is reached
       setShowLimitHint(true);
-      // Still set the truncated value
       setEditValue(value.slice(0, MAX_SESSION_NAME_LENGTH));
     }
   };
 
-  // Handle save
   const handleSave = () => {
     const trimmed = editValue.trim();
     if (trimmed && trimmed !== session.name) {
@@ -109,14 +101,12 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     setShowLimitHint(false);
   };
 
-  // Handle cancel
   const handleCancel = () => {
     setEditValue(session.name);
     setIsEditing(false);
     setShowLimitHint(false);
   };
 
-  // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -127,7 +117,6 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     }
   };
 
-  // Check if any tabs match search
   const hasMatchingTabs = searchQuery
     ? session.groups.some((group) =>
         group.tabs.some(
@@ -138,119 +127,121 @@ export const SessionCard: React.FC<SessionCardProps> = ({
       )
     : true;
 
-  // Auto-expand if searching and has matches
   const isExpanded = expanded || (searchQuery && hasMatchingTabs);
+  if (searchQuery && !hasMatchingTabs) return null;
 
-  if (searchQuery && !hasMatchingTabs) {
-    return null;
-  }
+  const isLoading = restoring || deleting || renaming;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-sm">
-      {/* Session Header */}
+    <div
+      className={`group rounded-xl border bg-white transition-all duration-200 dark:bg-surface-850 ${
+        isExpanded
+          ? "border-stone-200 shadow-sm dark:border-surface-700"
+          : "border-stone-100 hover:border-stone-200 hover:shadow-sm dark:border-surface-800 dark:hover:border-surface-700"
+      } ${isLoading ? "opacity-60" : ""}`}
+    >
+      {/* Card Header */}
       <div
-        className="flex items-center justify-between p-3 cursor-pointer select-none"
+        className="flex cursor-pointer select-none items-start gap-3 px-4 py-3"
         onClick={() => !isEditing && setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* Expand/Collapse Icon */}
+        {/* Expand Chevron - gentle */}
+        <button
+          className="-ml-1 mt-0.5 rounded-lg p-1 text-stone-300 transition-all duration-200 hover:bg-stone-50 hover:text-stone-500 dark:text-stone-600 dark:hover:bg-surface-800 dark:hover:text-stone-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+          aria-label={isExpanded ? "Collapse" : "Expand"}
+        >
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            strokeWidth={2}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
+        </button>
 
-          {/* Session Info */}
-          <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={editValue}
-                  onChange={handleInputChange}
-                  onBlur={handleSave}
-                  onKeyDown={handleKeyDown}
-                  disabled={renaming}
-                  maxLength={MAX_SESSION_NAME_LENGTH}
-                  className={`w-full text-sm font-medium text-gray-900 bg-white border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 ${
-                    showLimitHint ? "border-amber-400" : "border-gray-300"
-                  }`}
-                />
-                {showLimitHint && (
-                  <div className="absolute -bottom-5 left-0 text-[10px] text-amber-600">
-                    Max {MAX_SESSION_NAME_LENGTH} characters
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="group/title flex items-center gap-1">
-                <h3
-                  className="text-sm font-medium text-gray-900 truncate cursor-text hover:text-primary-600"
-                  onClick={handleStartEdit}
-                  title="Click to rename"
-                >
-                  {session.name}
-                </h3>
-                {/* Edit hint icon */}
-                <svg
-                  className="w-3 h-3 text-gray-300 opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </div>
-            )}
-            <p className="text-xs text-gray-500">
-              {totalTabs} tab{totalTabs !== 1 ? "s" : ""} · {formatDate(session.createdAt)}
-            </p>
-          </div>
+        {/* Session Content */}
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={editValue}
+                onChange={handleInputChange}
+                onBlur={handleSave}
+                onKeyDown={handleKeyDown}
+                disabled={renaming}
+                maxLength={MAX_SESSION_NAME_LENGTH}
+                className={`w-full rounded-lg border bg-white px-2.5 py-1 text-sm font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:bg-surface-800 dark:text-stone-100 dark:focus:ring-primary-400/30 ${
+                  showLimitHint ? "border-amber-400" : "dark:border-surface-600 border-stone-200"
+                }`}
+              />
+              {showLimitHint && (
+                <span className="absolute -bottom-5 left-0 text-[10px] text-amber-600 dark:text-amber-500">
+                  Max {MAX_SESSION_NAME_LENGTH} characters
+                </span>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Title - warm, inviting */}
+              <h3
+                className="cursor-text truncate text-sm font-medium leading-snug text-stone-700 hover:text-stone-900 dark:text-stone-100 dark:hover:text-white"
+                onClick={handleStartEdit}
+                title={`${session.name} – click to rename`}
+              >
+                {session.name}
+              </h3>
+              {/* Metadata - reassuring context */}
+              <p className="mt-0.5 text-xs leading-snug text-stone-400 dark:text-stone-500">
+                {totalTabs} {totalTabs === 1 ? "tab" : "tabs"} · {formatDate(session.createdAt)}
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-0.5 ml-2" onClick={(e) => e.stopPropagation()}>
-          {/* Copy Links Button */}
+        {/* Action Icons - gentle, supportive */}
+        <div
+          className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Copy Links */}
           <button
             onClick={() => onCopyLinks(session)}
+            disabled={isLoading}
             title="Copy all links"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="rounded-lg p-2 text-stone-300 transition-all duration-200 hover:bg-stone-50 hover:text-stone-500 disabled:opacity-40 dark:text-stone-600 dark:hover:bg-surface-700 dark:hover:text-stone-400"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
                 d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
               />
             </svg>
           </button>
 
-          {/* Restore Button */}
+          {/* Restore - warm accent color */}
           <button
             onClick={() => onRestore(session.id)}
-            disabled={restoring}
-            title="Restore session"
-            className="p-1.5 rounded text-primary-600 hover:bg-primary-50 disabled:opacity-50 transition-colors"
+            disabled={isLoading}
+            title="Open all tabs"
+            className="rounded-lg p-2 text-primary-500 transition-all duration-200 hover:bg-primary-50 hover:text-primary-600 disabled:opacity-40 dark:text-primary-400 dark:hover:bg-primary-900/20 dark:hover:text-primary-300"
           >
             {restoring ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -266,26 +257,31 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
                 />
               </svg>
             )}
           </button>
 
-          {/* Delete Button */}
+          {/* Delete - gentle, not aggressive */}
           <button
             onClick={() => onDelete(session.id)}
-            disabled={deleting}
-            title="Delete session"
-            className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            disabled={isLoading}
+            title="Remove session"
+            className="rounded-lg p-2 text-stone-300 transition-all duration-200 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40 dark:text-stone-600 dark:hover:bg-rose-900/15 dark:hover:text-rose-400"
           >
             {deleting ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -301,12 +297,17 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                 />
               </svg>
             )}
@@ -314,9 +315,9 @@ export const SessionCard: React.FC<SessionCardProps> = ({
         </div>
       </div>
 
-      {/* Expanded Content */}
+      {/* Expanded Content - Tabs List */}
       {isExpanded && (
-        <div className="px-3 pb-3 border-t border-gray-100">
+        <div className="border-t border-stone-50 px-4 pb-3 pt-0 dark:border-surface-800">
           {session.groups.map((group) => (
             <GroupView key={group.id} group={group} searchQuery={searchQuery} />
           ))}

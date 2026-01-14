@@ -24,8 +24,7 @@ import { HttpResponseInit } from "@azure/functions";
  * Production Chrome extension origin (always allowed).
  * This is hardcoded for security - cannot be disabled.
  */
-const PRODUCTION_EXTENSION_ORIGIN =
-  "chrome-extension://oniialkgdccpmecdkgpdheloohpcikmf";
+const PRODUCTION_EXTENSION_ORIGIN = "chrome-extension://oniialkgdccpmecdkgpdheloohpcikmf";
 
 /**
  * Get all allowed origins.
@@ -105,9 +104,7 @@ export function getCorsHeaders(origin: string | null): CorsHeaders | null {
  * Create a preflight (OPTIONS) response.
  * Returns 204 No Content with CORS headers.
  */
-export function createPreflightResponse(
-  origin: string | null
-): HttpResponseInit {
+export function createPreflightResponse(origin: string | null): HttpResponseInit {
   const corsHeaders = getCorsHeaders(origin);
 
   if (!corsHeaders) {
