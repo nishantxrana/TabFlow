@@ -10,6 +10,17 @@ import { MessageAction } from "@shared/messages";
 import { sendMessage } from "./hooks/useMessage";
 import { useSettings } from "./hooks/useSettings";
 import { Toggle, Toast, ConfirmDialog } from "./components";
+import {
+  Button,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@shared/components/ui";
 
 // Cloud sync status type
 type CloudSyncStatus = "idle" | "authenticating" | "uploading" | "downloading" | "success" | "error";
@@ -392,10 +403,10 @@ const App: React.FC = () => {
 
               {/* Sync Actions */}
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={handleCloudUpload}
                   disabled={isSyncing}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors"
+                  className="flex-1 bg-primary-500 hover:bg-primary-600 text-white"
                 >
                   {cloudSyncStatus === "uploading" || cloudSyncStatus === "authenticating" ? (
                     <>
@@ -413,12 +424,13 @@ const App: React.FC = () => {
                       <span>Upload to Cloud</span>
                     </>
                   )}
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="outline"
                   onClick={handleRestoreClick}
                   disabled={isSyncing}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-surface-700 disabled:opacity-50 transition-colors"
+                  className="flex-1"
                 >
                   {cloudSyncStatus === "downloading" ? (
                     <>
@@ -436,7 +448,7 @@ const App: React.FC = () => {
                       <span>Restore from Cloud</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </section>
 
@@ -481,8 +493,8 @@ const App: React.FC = () => {
               <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Data</h2>
 
               {/* Export / Import row */}
-              <div className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-surface-700">
-                <p className="text-sm text-gray-700 dark:text-gray-200">Export or import</p>
+              <div className="flex items-center justify-between py-2.5 border-b border-border/50">
+                <p className="text-sm text-foreground">Export or import</p>
                 <div className="flex gap-2">
                   <input
                     ref={fileInputRef}
@@ -491,10 +503,11 @@ const App: React.FC = () => {
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleImportClick}
                     disabled={importing}
-                    className="flex items-center gap-1 rounded border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-2.5 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-surface-700 disabled:opacity-50 transition-colors"
                   >
                     {importing ? (
                       <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
@@ -507,11 +520,12 @@ const App: React.FC = () => {
                       </svg>
                     )}
                     <span>Import</span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={handleExport}
                     disabled={exporting}
-                    className="flex items-center gap-1 rounded bg-primary-600 dark:bg-primary-500 px-2.5 py-1 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors"
+                    className="bg-primary-500 hover:bg-primary-600 text-white"
                   >
                     {exporting ? (
                       <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
@@ -524,23 +538,25 @@ const App: React.FC = () => {
                       </svg>
                     )}
                     <span>Export</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Reset Data - Isolated, low emphasis */}
               <div className="flex items-center justify-between py-2.5">
                 <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-200">Delete all sessions</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">This can be undone</p>
+                  <p className="text-sm text-foreground">Delete all sessions</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">This can be undone</p>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClearClick}
                   disabled={clearing}
-                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 transition-colors"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   Reset data
-                </button>
+                </Button>
               </div>
             </section>
 
@@ -552,71 +568,66 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Restore Confirmation Dialog */}
-      {showRestoreConfirm && restorePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-stone-900/20 dark:bg-black/40 backdrop-blur-[2px]"
-            onClick={cloudSyncStatus === "downloading" ? undefined : handleRestoreCancel}
-          />
+      {/* Restore Confirmation Dialog - using shadcn AlertDialog */}
+      <AlertDialog 
+        open={showRestoreConfirm && restorePreview !== null} 
+        onOpenChange={(open) => !open && cloudSyncStatus !== "downloading" && handleRestoreCancel()}
+      >
+        <AlertDialogContent className="max-w-[360px]">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle>Restore from cloud?</AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">
+              Preview and confirm restoration of cloud backup
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-          {/* Dialog */}
-          <div className="relative w-full max-w-[360px] bg-white dark:bg-surface-850 rounded-2xl shadow-xl dark:shadow-2xl animate-scale-in overflow-hidden">
-            <div className="p-5">
-              <h2 className="text-base font-medium text-stone-800 dark:text-stone-100 mb-4">Restore from cloud?</h2>
-
-              {/* Preview */}
-              <div className="bg-stone-50 dark:bg-surface-800 rounded-xl p-4 mb-4 text-sm">
-                <div className="flex justify-between py-1">
-                  <span className="text-stone-500 dark:text-stone-400">Sessions</span>
-                  <span className="text-stone-800 dark:text-stone-200 font-medium">{restorePreview.sessionCount}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-stone-500 dark:text-stone-400">Tabs</span>
-                  <span className="text-stone-800 dark:text-stone-200 font-medium">{restorePreview.totalTabs}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-stone-500 dark:text-stone-400">Synced</span>
-                  <span className="text-stone-800 dark:text-stone-200 font-medium">
-                    {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                  </span>
-                </div>
+          {/* Preview Card */}
+          {restorePreview && (
+            <div className="bg-secondary rounded-xl p-4 text-sm space-y-1">
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">Sessions</span>
+                <span className="text-foreground font-medium">{restorePreview.sessionCount}</span>
               </div>
-
-              <p className="text-sm text-stone-500 dark:text-stone-400 mb-5">
-                This will replace your local sessions. You can undo afterward.
-              </p>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleRestoreCancel}
-                  disabled={cloudSyncStatus === "downloading"}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-surface-800 rounded-lg border border-stone-200 dark:border-surface-700 hover:bg-stone-200 hover:border-stone-300 dark:hover:bg-surface-700 dark:hover:border-stone-600 disabled:opacity-50 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRestoreConfirm}
-                  disabled={cloudSyncStatus === "downloading"}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
-                >
-                  {cloudSyncStatus === "downloading" && (
-                    <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  )}
-                  Restore
-                </button>
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">Tabs</span>
+                <span className="text-foreground font-medium">{restorePreview.totalTabs}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">Synced</span>
+                <span className="text-foreground font-medium">
+                  {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          <p className="text-sm text-muted-foreground">
+            This will replace your local sessions. You can undo afterward.
+          </p>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={cloudSyncStatus === "downloading"} 
+              onClick={handleRestoreCancel}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cloudSyncStatus === "downloading"}
+              onClick={handleRestoreConfirm}
+              className="bg-primary-500 hover:bg-primary-600 text-white"
+            >
+              {cloudSyncStatus === "downloading" && (
+                <svg className="animate-spin h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
+              Restore
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Clear Confirmation Dialog */}
       <ConfirmDialog
