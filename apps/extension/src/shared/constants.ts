@@ -59,7 +59,7 @@ export const POPUP_MAX_HEIGHT_PX = 600;
 export const ERROR_TOAST_DURATION_MS = 5000;
 
 /** Maximum session name length (characters) */
-export const MAX_SESSION_NAME_LENGTH = 50;
+export const MAX_SESSION_NAME_LENGTH = 40;
 
 // =============================================================================
 // Alarm Names

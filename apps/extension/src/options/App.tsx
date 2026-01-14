@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { MessageAction } from "@shared/messages";
+import type { Session } from "@shared/types";
 import { sendMessage } from "./hooks/useMessage";
 import { useSettings } from "./hooks/useSettings";
 import { Toggle, Toast, ConfirmDialog } from "./components";
@@ -31,6 +32,12 @@ type CloudSyncStatus =
   | "success"
   | "error";
 
+// Helper to extract session names from sessions
+interface SessionSummary {
+  name: string;
+  tabCount: number;
+}
+
 const App: React.FC = () => {
   // Settings from hook
   const { settings, tier, loading, updateSettings } = useSettings();
@@ -52,7 +59,14 @@ const App: React.FC = () => {
     totalTabs: number;
     lastSyncedAt: string;
     sessionsJson: string;
+    cloudSessions: SessionSummary[];
   } | null>(null);
+
+  // Local sessions for comparison dialogs
+  const [localSessions, setLocalSessions] = useState<SessionSummary[]>([]);
+
+  // Upload confirmation dialog state
+  const [showUploadConfirm, setShowUploadConfirm] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<{
@@ -188,8 +202,38 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Handle cloud upload
+  // Helper to get total tab count from sessions
+  const getTotalTabs = (sessions: SessionSummary[]): number => {
+    return sessions.reduce((sum, s) => sum + s.tabCount, 0);
+  };
+
+  // Fetch local sessions and show upload confirmation
+  const handleUploadClick = useCallback(async () => {
+    try {
+      const sessions: Session[] = await sendMessage(MessageAction.GET_SESSIONS);
+      const summaries: SessionSummary[] = sessions.map((s) => ({
+        name: s.name,
+        tabCount: s.groups.reduce((sum, g) => sum + g.tabs.length, 0),
+      }));
+      setLocalSessions(summaries);
+      setShowUploadConfirm(true);
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : "Failed to load sessions",
+        type: "error",
+      });
+    }
+  }, []);
+
+  // Cancel upload - close dialog
+  const handleUploadCancel = useCallback(() => {
+    setShowUploadConfirm(false);
+    setLocalSessions([]);
+  }, []);
+
+  // Handle cloud upload (after confirmation)
   const handleCloudUpload = useCallback(async () => {
+    setShowUploadConfirm(false);
     setCloudSyncStatus("authenticating");
     try {
       setCloudSyncStatus("uploading");
@@ -216,6 +260,8 @@ const App: React.FC = () => {
 
       // Reset status after a delay
       setTimeout(() => setCloudSyncStatus("idle"), 3000);
+    } finally {
+      setLocalSessions([]);
     }
   }, []);
 
@@ -224,7 +270,12 @@ const App: React.FC = () => {
     setCloudSyncStatus("authenticating");
     try {
       setCloudSyncStatus("downloading");
-      const result = await sendMessage(MessageAction.CLOUD_DOWNLOAD_PREVIEW);
+
+      // Fetch both cloud preview and local sessions in parallel
+      const [result, localSessionsData] = await Promise.all([
+        sendMessage(MessageAction.CLOUD_DOWNLOAD_PREVIEW),
+        sendMessage(MessageAction.GET_SESSIONS) as Promise<Session[]>,
+      ]);
 
       if (!result.found) {
         setCloudSyncStatus("idle");
@@ -232,8 +283,31 @@ const App: React.FC = () => {
         return;
       }
 
+      // Parse local sessions
+      const localSummaries: SessionSummary[] = localSessionsData.map((s) => ({
+        name: s.name,
+        tabCount: s.groups.reduce((sum, g) => sum + g.tabs.length, 0),
+      }));
+      setLocalSessions(localSummaries);
+
+      // Parse cloud sessions from sessionsJson
+      let cloudSummaries: SessionSummary[] = [];
+      try {
+        const cloudSessions: Session[] = JSON.parse(result.preview!.sessionsJson);
+        cloudSummaries = cloudSessions.map((s) => ({
+          name: s.name,
+          tabCount: s.groups.reduce((sum, g) => sum + g.tabs.length, 0),
+        }));
+      } catch {
+        // If parsing fails, use count from preview
+        cloudSummaries = [];
+      }
+
       // Data found - show preview dialog (DO NOT apply yet)
-      setRestorePreview(result.preview!);
+      setRestorePreview({
+        ...result.preview!,
+        cloudSessions: cloudSummaries,
+      });
       setShowRestoreConfirm(true);
       setCloudSyncStatus("idle");
     } catch (err) {
@@ -290,6 +364,7 @@ const App: React.FC = () => {
     } finally {
       // Clear preview and close dialog
       setRestorePreview(null);
+      setLocalSessions([]);
       setShowRestoreConfirm(false);
     }
   }, [restorePreview]);
@@ -297,6 +372,7 @@ const App: React.FC = () => {
   // Cancel restore - clear preview data
   const handleRestoreCancel = useCallback(() => {
     setRestorePreview(null);
+    setLocalSessions([]);
     setShowRestoreConfirm(false);
   }, []);
 
@@ -414,7 +490,7 @@ const App: React.FC = () => {
               {/* Sync Actions */}
               <div className="flex gap-2">
                 <Button
-                  onClick={handleCloudUpload}
+                  onClick={handleUploadClick}
                   disabled={isSyncing}
                   className="flex-1 bg-primary-500 text-white hover:bg-primary-600"
                 >
@@ -671,41 +747,117 @@ const App: React.FC = () => {
         open={showRestoreConfirm && restorePreview !== null}
         onOpenChange={(open) => !open && cloudSyncStatus !== "downloading" && handleRestoreCancel()}
       >
-        <AlertDialogContent className="max-w-[360px]">
+        <AlertDialogContent className="max-w-[400px]">
           <AlertDialogHeader className="text-left">
-            <AlertDialogTitle>Restore from cloud?</AlertDialogTitle>
+            <AlertDialogTitle>Restore from Cloud</AlertDialogTitle>
             <AlertDialogDescription className="sr-only">
               Preview and confirm restoration of cloud backup
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {/* Preview Card */}
+          {/* Before/After Comparison */}
           {restorePreview && (
-            <div className="space-y-1 rounded-xl bg-secondary p-4 text-sm">
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Sessions</span>
-                <span className="font-medium text-foreground">{restorePreview.sessionCount}</span>
+            <div className="space-y-4">
+              {/* Current local sessions */}
+              <div className="rounded-xl border border-stone-100 bg-stone-50 p-3 dark:border-surface-700 dark:bg-surface-800">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    Current
+                  </span>
+                  <span className="text-xs text-stone-400 dark:text-stone-500">
+                    {localSessions.length} session{localSessions.length !== 1 ? "s" : ""} ·{" "}
+                    {getTotalTabs(localSessions)} tab{getTotalTabs(localSessions) !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {localSessions.length === 0 ? (
+                  <p className="text-sm italic text-stone-400 dark:text-stone-500">
+                    No sessions on this device
+                  </p>
+                ) : (
+                  <div className="max-h-24 space-y-1 overflow-y-auto">
+                    {localSessions.map((s, i) => (
+                      <div
+                        key={i}
+                        className="flex min-w-0 items-center justify-between gap-2 text-sm text-stone-600 dark:text-stone-300"
+                      >
+                        <span className="min-w-0 truncate" title={s.name}>
+                          {s.name}
+                        </span>
+                        <span className="flex-shrink-0 text-xs text-stone-400 dark:text-stone-500">
+                          {s.tabCount} tab{s.tabCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Tabs</span>
-                <span className="font-medium text-foreground">{restorePreview.totalTabs}</span>
+
+              {/* Arrow indicator */}
+              <div className="flex justify-center">
+                <svg
+                  className="h-5 w-5 text-stone-300 dark:text-stone-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Synced</span>
-                <span className="font-medium text-foreground">
+
+              {/* Cloud backup sessions */}
+              <div className="rounded-xl border border-primary-100 bg-primary-50 p-3 dark:border-primary-900/30 dark:bg-primary-900/10">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-primary-600 dark:text-primary-400">
+                    From Cloud
+                  </span>
+                  <span className="text-xs text-primary-500 dark:text-primary-400/70">
+                    {restorePreview.sessionCount} session
+                    {restorePreview.sessionCount !== 1 ? "s" : ""} · {restorePreview.totalTabs} tab
+                    {restorePreview.totalTabs !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="mb-2 text-xs text-primary-500 dark:text-primary-400/70">
+                  Backed up{" "}
                   {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
                   })}
-                </span>
+                </div>
+                {restorePreview.cloudSessions.length === 0 ? (
+                  <p className="text-sm text-primary-600 dark:text-primary-300">
+                    {restorePreview.sessionCount} session
+                    {restorePreview.sessionCount !== 1 ? "s" : ""} will be restored
+                  </p>
+                ) : (
+                  <div className="max-h-24 space-y-1 overflow-y-auto">
+                    {restorePreview.cloudSessions.map((s, i) => (
+                      <div
+                        key={i}
+                        className="flex min-w-0 items-center justify-between gap-2 text-sm text-primary-700 dark:text-primary-200"
+                      >
+                        <span className="min-w-0 truncate" title={s.name}>
+                          {s.name}
+                        </span>
+                        <span className="flex-shrink-0 text-xs text-primary-500 dark:text-primary-400/70">
+                          {s.tabCount} tab{s.tabCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           <p className="text-sm text-muted-foreground">
-            This will replace your local sessions. You can undo afterward.
+            Your current sessions will be replaced. You can undo immediately after restoring.
           </p>
 
           <AlertDialogFooter>
@@ -738,6 +890,83 @@ const App: React.FC = () => {
                 </svg>
               )}
               Restore
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Upload Confirmation Dialog */}
+      <AlertDialog open={showUploadConfirm} onOpenChange={(open) => !open && handleUploadCancel()}>
+        <AlertDialogContent className="max-w-[380px]">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle>Upload to Cloud</AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">
+              Confirm uploading your sessions to cloud backup
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Sessions to upload */}
+          <div className="space-y-3">
+            <div className="rounded-xl border border-stone-100 bg-stone-50 p-3 dark:border-surface-700 dark:bg-surface-800">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                  Sessions to Upload
+                </span>
+                <span className="text-xs text-stone-400 dark:text-stone-500">
+                  {localSessions.length} session{localSessions.length !== 1 ? "s" : ""} ·{" "}
+                  {getTotalTabs(localSessions)} tab{getTotalTabs(localSessions) !== 1 ? "s" : ""}
+                </span>
+              </div>
+              {localSessions.length === 0 ? (
+                <p className="text-sm italic text-stone-400 dark:text-stone-500">
+                  No sessions to upload
+                </p>
+              ) : (
+                <div className="max-h-32 space-y-1 overflow-y-auto">
+                  {localSessions.map((s, i) => (
+                    <div
+                      key={i}
+                      className="flex min-w-0 items-center justify-between gap-2 text-sm text-stone-600 dark:text-stone-300"
+                    >
+                      <span className="min-w-0 truncate" title={s.name}>
+                        {s.name}
+                      </span>
+                      <span className="flex-shrink-0 text-xs text-stone-400 dark:text-stone-500">
+                        {s.tabCount} tab{s.tabCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Your cloud backup will be updated to match these sessions. This replaces any previous
+            backup.
+          </p>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleUploadCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCloudUpload}
+              disabled={localSessions.length === 0}
+              className="bg-primary-500 text-white hover:bg-primary-600"
+            >
+              <svg
+                className="mr-1.5 h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              Upload
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

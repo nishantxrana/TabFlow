@@ -106,7 +106,7 @@ const AlertDialogAction = React.forwardRef<
   <AlertDialogPrimitive.Action
     ref={ref}
     className={cn(
-      "flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
       "bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50",
       className
     )}
@@ -125,7 +125,7 @@ const AlertDialogCancel = React.forwardRef<
   <AlertDialogPrimitive.Cancel
     ref={ref}
     className={cn(
-      "flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
       "bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50",
       className
     )}
