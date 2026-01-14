@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TabFlow – Smart Tab Sessions & Cloud Sync",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Save your open tabs as sessions, sync across devices, and group with AI. Perfect for productivity and research.",
   "action": {
     "default_popup": "popup.html",

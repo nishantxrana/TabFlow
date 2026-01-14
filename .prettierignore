@@ -1,0 +1,10 @@
+# Build outputs
+dist/
+node_modules/
+
+# Lock files
+package-lock.json
+
+# Azure Functions config (keep as-is)
+local.settings.json
+
