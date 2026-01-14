@@ -5,6 +5,7 @@ Azure Functions backend for TabFlow Chrome Extension.
 ## Overview
 
 This API provides:
+
 - **Google Authentication** - Verify Google ID tokens and generate stable user IDs
 
 ## Tech Stack
@@ -52,6 +53,7 @@ The API will be available at `http://localhost:7071`
 Verify a Google ID token and get a stable userId.
 
 **Request:**
+
 ```bash
 curl -X POST http://localhost:7071/auth/google \
   -H "Content-Type: application/json" \
@@ -59,12 +61,14 @@ curl -X POST http://localhost:7071/auth/google \
 ```
 
 Or with Authorization header:
+
 ```bash
 curl -X POST http://localhost:7071/auth/google \
   -H "Authorization: Bearer YOUR_GOOGLE_ID_TOKEN"
 ```
 
 **Response (200):**
+
 ```json
 {
   "userId": "a1b2c3d4e5f6...",
@@ -73,6 +77,7 @@ curl -X POST http://localhost:7071/auth/google \
 ```
 
 **Error Response (401):**
+
 ```json
 {
   "error": "Token verification failed",
@@ -82,11 +87,11 @@ curl -X POST http://localhost:7071/auth/google \
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GOOGLE_CLIENT_ID` | Google OAuth 2.0 Client ID | Yes |
-| `STORAGE_CONNECTION_STRING` | Azure Storage connection (future) | No |
-| `BLOB_CONTAINER_NAME` | Blob container for sync (future) | No |
+| Variable                    | Description                       | Required |
+| --------------------------- | --------------------------------- | -------- |
+| `GOOGLE_CLIENT_ID`          | Google OAuth 2.0 Client ID        | Yes      |
+| `STORAGE_CONNECTION_STRING` | Azure Storage connection (future) | No       |
+| `BLOB_CONTAINER_NAME`       | Blob container for sync (future)  | No       |
 
 ## Security
 
@@ -125,4 +130,3 @@ npm run build
 # Deploy (via Azure CLI)
 func azure functionapp publish <APP_NAME>
 ```
-

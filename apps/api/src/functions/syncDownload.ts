@@ -21,12 +21,7 @@
  * No body
  */
 
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { verifyGoogleToken } from "../lib/auth";
 import { downloadSyncBlob } from "../lib/storage";
 import { createPreflightResponse, withCorsHeaders } from "../lib/cors";
@@ -112,11 +107,7 @@ async function syncDownload(
   try {
     // Only accept GET requests
     if (request.method !== "GET") {
-      return jsonResponse(
-        { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
-        405,
-        origin
-      );
+      return jsonResponse({ error: "Method not allowed", code: "METHOD_NOT_ALLOWED" }, 405, origin);
     }
 
     // -------------------------------------------------------------------------
@@ -135,22 +126,14 @@ async function syncDownload(
       const idToken = extractIdToken(request);
       if (!idToken) {
         context.log("[syncDownload] AUTH_MISSING: No token provided");
-        return jsonResponse(
-          { error: "Authorization required", code: "UNAUTHORIZED" },
-          401,
-          origin
-        );
+        return jsonResponse({ error: "Authorization required", code: "UNAUTHORIZED" }, 401, origin);
       }
 
       const authResult = await verifyGoogleToken(idToken);
 
       if (!authResult.success) {
         context.log(`[syncDownload] AUTH_FAILED: ${authResult.code}`);
-        return jsonResponse(
-          { error: authResult.error, code: authResult.code },
-          401,
-          origin
-        );
+        return jsonResponse({ error: authResult.error, code: authResult.code }, 401, origin);
       }
 
       userId = authResult.userId;
@@ -167,11 +150,7 @@ async function syncDownload(
     // Handle errors
     if (!downloadResult.success) {
       context.error(`[syncDownload] STORAGE_ERROR: ${downloadResult.code} user=${userIdShort}`);
-      return jsonResponse(
-        { error: downloadResult.error, code: downloadResult.code },
-        500,
-        origin
-      );
+      return jsonResponse({ error: downloadResult.error, code: downloadResult.code }, 500, origin);
     }
 
     // Handle no data (204 No Content)
@@ -190,7 +169,9 @@ async function syncDownload(
     // Step 3: Return Success
     // -------------------------------------------------------------------------
 
-    context.log(`[syncDownload] SUCCESS: user=${userIdShort} synced=${downloadResult.lastSyncedAt}`);
+    context.log(
+      `[syncDownload] SUCCESS: user=${userIdShort} synced=${downloadResult.lastSyncedAt}`
+    );
 
     return jsonResponse(
       {
@@ -205,11 +186,7 @@ async function syncDownload(
     // Catch any unhandled errors - only log error type, not full message (could contain tokens)
     const errorType = error instanceof Error ? error.name : "Unknown";
     context.error(`[syncDownload] INTERNAL_ERROR: type=${errorType}`);
-    return jsonResponse(
-      { error: "Internal server error", code: "INTERNAL_ERROR" },
-      500,
-      origin
-    );
+    return jsonResponse({ error: "Internal server error", code: "INTERNAL_ERROR" }, 500, origin);
   }
 }
 

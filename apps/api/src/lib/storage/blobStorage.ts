@@ -211,9 +211,7 @@ export async function hasSyncBlob(userId: string): Promise<boolean> {
  *
  * @param userId - Internal user ID (derived from auth)
  */
-export async function downloadSyncBlob(
-  userId: string
-): Promise<DownloadBlobResult> {
+export async function downloadSyncBlob(userId: string): Promise<DownloadBlobResult> {
   try {
     const blobServiceClient = getBlobServiceClient();
     const { containerName } = getStorageConfig();
@@ -268,9 +266,7 @@ export async function downloadSyncBlob(
 /**
  * Helper to convert a readable stream to string.
  */
-async function streamToString(
-  readableStream: NodeJS.ReadableStream | undefined
-): Promise<string> {
+async function streamToString(readableStream: NodeJS.ReadableStream | undefined): Promise<string> {
   if (!readableStream) {
     return "";
   }
@@ -286,4 +282,3 @@ async function streamToString(
     readableStream.on("error", reject);
   });
 }
-

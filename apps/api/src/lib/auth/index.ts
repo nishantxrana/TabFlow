@@ -8,4 +8,3 @@ export {
   type GoogleVerificationError,
   type VerifyGoogleTokenResult,
 } from "./googleAuth";
-

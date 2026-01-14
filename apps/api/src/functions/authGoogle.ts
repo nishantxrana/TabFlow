@@ -23,12 +23,7 @@
  * }
  */
 
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { verifyGoogleToken } from "../lib/auth";
 
 // =============================================================================
@@ -106,10 +101,7 @@ async function authGoogle(
 ): Promise<HttpResponseInit> {
   // Only accept POST requests
   if (request.method !== "POST") {
-    return jsonResponse(
-      { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
-      405
-    );
+    return jsonResponse({ error: "Method not allowed", code: "METHOD_NOT_ALLOWED" }, 405);
   }
 
   // Extract ID token from request
@@ -134,13 +126,10 @@ async function authGoogle(
       result.code === "EXPIRED_TOKEN" || result.code === "INVALID_TOKEN"
         ? 401
         : result.code === "INVALID_AUDIENCE"
-        ? 403
-        : 401;
+          ? 403
+          : 401;
 
-    return jsonResponse(
-      { error: result.error, code: result.code },
-      statusCode
-    );
+    return jsonResponse({ error: result.error, code: result.code }, statusCode);
   }
 
   context.log(`[authGoogle] SUCCESS: user=${result.userId.substring(0, 8)}`);
@@ -164,4 +153,3 @@ app.http("authGoogle", {
   route: "auth/google",
   handler: authGoogle,
 });
-
