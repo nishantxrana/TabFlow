@@ -33,11 +33,7 @@ import {
   updateSession,
   clearAllSessions,
 } from "@storage/sessions";
-import {
-  exportData,
-  parseImportData,
-  restoreFromBackup,
-} from "@storage/backups";
+import { exportData, parseImportData, restoreFromBackup } from "@storage/backups";
 
 // Background module imports
 import { getCurrentWindowTabs, restoreSessionTabs } from "./tabCapture";
@@ -120,21 +116,12 @@ export async function handleMessage(
         }
 
         // Create and save session
-        const session = await createSession(
-          name || `Session ${new Date().toLocaleString()}`,
-          tabs
-        );
+        const session = await createSession(name || `Session ${new Date().toLocaleString()}`, tabs);
 
         // Push undo entry
         await pushSaveSessionUndo(session.id);
 
-        console.log(
-          "[TabFlow] Session saved:",
-          session.id,
-          "with",
-          tabs.length,
-          "tabs"
-        );
+        console.log("[TabFlow] Session saved:", session.id, "with", tabs.length, "tabs");
         return { success: true, data: session };
       }
 
@@ -155,13 +142,7 @@ export async function handleMessage(
         // Restore tabs from all groups
         const tabsOpened = await restoreSessionTabs(session.groups);
 
-        console.log(
-          "[TabFlow] Session restored:",
-          sessionId,
-          "opened",
-          tabsOpened,
-          "tabs"
-        );
+        console.log("[TabFlow] Session restored:", sessionId, "opened", tabsOpened, "tabs");
         return { success: true, data: { tabsOpened } };
       }
 
@@ -221,13 +202,7 @@ export async function handleMessage(
         // Push undo entry
         await pushRenameSessionUndo(sessionId, oldName, trimmedName);
 
-        console.log(
-          "[TabFlow] Session renamed:",
-          sessionId,
-          oldName,
-          "->",
-          trimmedName
-        );
+        console.log("[TabFlow] Session renamed:", sessionId, oldName, "->", trimmedName);
         return { success: true, data: { session: updatedSession } };
       }
 
@@ -297,8 +272,7 @@ export async function handleMessage(
         } catch (error) {
           return {
             success: false,
-            error:
-              error instanceof Error ? error.message : "Invalid import data",
+            error: error instanceof Error ? error.message : "Invalid import data",
           };
         }
 
@@ -312,11 +286,7 @@ export async function handleMessage(
         // Push undo entry
         await pushImportUndo(previousSessionsCopy);
 
-        console.log(
-          "[TabFlow] Data imported:",
-          importBlob.sessions.length,
-          "sessions"
-        );
+        console.log("[TabFlow] Data imported:", importBlob.sessions.length, "sessions");
         return {
           success: true,
           data: { sessionsImported: importBlob.sessions.length },
@@ -333,11 +303,7 @@ export async function handleMessage(
         // Push undo entry so user can recover
         await pushImportUndo(sessionsToDelete);
 
-        console.log(
-          "[TabFlow] All data cleared:",
-          sessionsToDelete.length,
-          "sessions"
-        );
+        console.log("[TabFlow] All data cleared:", sessionsToDelete.length, "sessions");
         return { success: true, data: { success: true } };
       }
 
@@ -421,11 +387,7 @@ export async function handleMessage(
         // Push undo entry so user can recover
         await pushImportUndo(previousSessions);
 
-        console.log(
-          "[TabFlow] Cloud restore applied:",
-          result.sessionsRestored,
-          "sessions"
-        );
+        console.log("[TabFlow] Cloud restore applied:", result.sessionsRestored, "sessions");
 
         return {
           success: true,

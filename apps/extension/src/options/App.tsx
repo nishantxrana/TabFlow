@@ -23,7 +23,13 @@ import {
 } from "@shared/components/ui";
 
 // Cloud sync status type
-type CloudSyncStatus = "idle" | "authenticating" | "uploading" | "downloading" | "success" | "error";
+type CloudSyncStatus =
+  | "idle"
+  | "authenticating"
+  | "uploading"
+  | "downloading"
+  | "success"
+  | "error";
 
 const App: React.FC = () => {
   // Settings from hook
@@ -121,45 +127,42 @@ const App: React.FC = () => {
   }, []);
 
   // Handle file selection
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      // Reset input for re-selection
-      e.target.value = "";
+    // Reset input for re-selection
+    e.target.value = "";
 
-      // Validate file type
-      if (!file.name.endsWith(".json")) {
-        setToast({ message: "Please select a JSON file", type: "error" });
-        return;
-      }
+    // Validate file type
+    if (!file.name.endsWith(".json")) {
+      setToast({ message: "Please select a JSON file", type: "error" });
+      return;
+    }
 
-      setImporting(true);
-      try {
-        // Read file content
-        const json = await file.text();
+    setImporting(true);
+    try {
+      // Read file content
+      const json = await file.text();
 
-        // Send to background for import
-        const result = await sendMessage(MessageAction.IMPORT_DATA, { json });
+      // Send to background for import
+      const result = await sendMessage(MessageAction.IMPORT_DATA, { json });
 
-        setToast({
-          message: `Imported ${result.sessionsImported} session${
-            result.sessionsImported !== 1 ? "s" : ""
-          }`,
-          type: "success",
-        });
-      } catch (err) {
-        setToast({
-          message: err instanceof Error ? err.message : "Import failed",
-          type: "error",
-        });
-      } finally {
-        setImporting(false);
-      }
-    },
-    []
-  );
+      setToast({
+        message: `Imported ${result.sessionsImported} session${
+          result.sessionsImported !== 1 ? "s" : ""
+        }`,
+        type: "success",
+      });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : "Import failed",
+        type: "error",
+      });
+    } finally {
+      setImporting(false);
+    }
+  }, []);
 
   // Handle clear data
   const handleClearClick = useCallback(() => {
@@ -201,10 +204,11 @@ const App: React.FC = () => {
       setCloudSyncStatus("error");
       const message = err instanceof Error ? err.message : "Upload failed";
       // Check if it's an auth-related error
-      const isAuthError = message.includes("Sign-in") || 
-                          message.includes("cancelled") || 
-                          message.includes("Session expired") ||
-                          message.includes("Authentication");
+      const isAuthError =
+        message.includes("Sign-in") ||
+        message.includes("cancelled") ||
+        message.includes("Session expired") ||
+        message.includes("Authentication");
       setToast({
         message: isAuthError ? message : "Upload failed. Please try again.",
         type: "error",
@@ -236,10 +240,11 @@ const App: React.FC = () => {
       setCloudSyncStatus("error");
       const message = err instanceof Error ? err.message : "Download failed";
       // Check if it's an auth-related error
-      const isAuthError = message.includes("Sign-in") || 
-                          message.includes("cancelled") || 
-                          message.includes("Session expired") ||
-                          message.includes("Authentication");
+      const isAuthError =
+        message.includes("Sign-in") ||
+        message.includes("cancelled") ||
+        message.includes("Session expired") ||
+        message.includes("Authentication");
       setToast({
         message: isAuthError ? message : "Download failed. Please try again.",
         type: "error",
@@ -346,58 +351,63 @@ const App: React.FC = () => {
     }
   };
 
-  const isSyncing = cloudSyncStatus === "authenticating" || 
-                    cloudSyncStatus === "uploading" || 
-                    cloudSyncStatus === "downloading";
+  const isSyncing =
+    cloudSyncStatus === "authenticating" ||
+    cloudSyncStatus === "uploading" ||
+    cloudSyncStatus === "downloading";
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       {/* Header - warm, grounding */}
-      <header className="bg-white dark:bg-surface-850 border-b border-stone-100 dark:border-surface-800 px-6 py-5">
-        <div className="max-w-lg mx-auto">
+      <header className="border-b border-stone-100 bg-white px-6 py-5 dark:border-surface-800 dark:bg-surface-850">
+        <div className="mx-auto max-w-lg">
           <h1 className="text-base font-medium text-stone-800 dark:text-stone-100">Settings</h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Manage your backups and data</p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            Manage your backups and data
+          </p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-6 py-6 space-y-6">
+      <main className="mx-auto max-w-lg space-y-6 px-6 py-6">
         {loading ? (
           <div className="animate-pulse space-y-6">
-            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-16" />
-            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-5 h-40" />
-            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-28" />
-            <div className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4 h-24" />
+            <div className="h-16 rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850" />
+            <div className="h-40 rounded-lg border border-gray-100 bg-white p-5 dark:border-surface-800 dark:bg-surface-850" />
+            <div className="h-28 rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850" />
+            <div className="h-24 rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850" />
           </div>
         ) : (
           <>
             {/* Plan Display */}
-            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
+            <section className="rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Current plan</p>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mt-0.5">
+                  <p className="mt-0.5 text-sm font-medium text-gray-700 dark:text-gray-200">
                     {tier === "pro" ? "Pro – Unlimited tabs" : "Free – Up to 100 tabs"}
                   </p>
                 </div>
-                <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${tierBadgeClass}`}>
+                <span
+                  className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${tierBadgeClass}`}
+                >
                   {tierLabel}
                 </span>
               </div>
             </section>
 
             {/* Cloud Sync - Focal point */}
-            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-5">
+            <section className="rounded-lg border border-gray-100 bg-white p-5 dark:border-surface-800 dark:bg-surface-850">
               <div className="mb-5">
                 <h2 className="text-sm font-medium text-gray-800 dark:text-gray-100">Cloud Sync</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Your sessions are encrypted before leaving your device
                 </p>
               </div>
 
               {/* Sync Status */}
-              <div className="flex items-center gap-2 mb-5 text-sm text-gray-600 dark:text-gray-400">
-                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getSyncStatusColor()}`} />
+              <div className="mb-5 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${getSyncStatusColor()}`} />
                 <span>{getSyncStatusText()}</span>
               </div>
 
@@ -406,20 +416,43 @@ const App: React.FC = () => {
                 <Button
                   onClick={handleCloudUpload}
                   disabled={isSyncing}
-                  className="flex-1 bg-primary-500 hover:bg-primary-600 text-white"
+                  className="flex-1 bg-primary-500 text-white hover:bg-primary-600"
                 >
                   {cloudSyncStatus === "uploading" || cloudSyncStatus === "authenticating" ? (
                     <>
-                      <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
-                      <span>{cloudSyncStatus === "authenticating" ? "Signing in…" : "Uploading…"}</span>
+                      <span>
+                        {cloudSyncStatus === "authenticating" ? "Signing in…" : "Uploading…"}
+                      </span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
                       </svg>
                       <span>Upload to Cloud</span>
                     </>
@@ -434,16 +467,37 @@ const App: React.FC = () => {
                 >
                   {cloudSyncStatus === "downloading" ? (
                     <>
-                      <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       <span>Restoring…</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                        />
                       </svg>
                       <span>Restore from Cloud</span>
                     </>
@@ -453,14 +507,16 @@ const App: React.FC = () => {
             </section>
 
             {/* Local Backup */}
-            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
-              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Local Backup</h2>
+            <section className="rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850">
+              <h2 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-200">
+                Local Backup
+              </h2>
 
               {/* Auto Backup Toggle */}
-              <div className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-surface-700">
+              <div className="flex items-center justify-between border-b border-gray-50 py-2.5 dark:border-surface-700">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-200">Auto backup</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                     Save sessions periodically
                   </p>
                 </div>
@@ -478,7 +534,7 @@ const App: React.FC = () => {
                   value={settings.backupFrequencyHours}
                   onChange={handleFrequencyChange}
                   disabled={!settings.autoBackup}
-                  className="rounded border border-gray-200 dark:border-surface-600 bg-white dark:bg-surface-800 px-2 py-1 text-sm text-gray-600 dark:text-gray-300 focus:border-primary-400 dark:focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100 dark:focus:ring-primary-900 disabled:opacity-40 disabled:bg-gray-50 dark:disabled:bg-surface-700 transition-colors"
+                  className="dark:border-surface-600 rounded border border-gray-200 bg-white px-2 py-1 text-sm text-gray-600 transition-colors focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-100 disabled:bg-gray-50 disabled:opacity-40 dark:bg-surface-800 dark:text-gray-300 dark:focus:border-primary-500 dark:focus:ring-primary-900 dark:disabled:bg-surface-700"
                 >
                   <option value={1}>Every hour</option>
                   <option value={6}>Every 6 hours</option>
@@ -489,11 +545,11 @@ const App: React.FC = () => {
             </section>
 
             {/* Data Management */}
-            <section className="bg-white dark:bg-surface-850 rounded-lg border border-gray-100 dark:border-surface-800 p-4">
-              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Data</h2>
+            <section className="rounded-lg border border-gray-100 bg-white p-4 dark:border-surface-800 dark:bg-surface-850">
+              <h2 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-200">Data</h2>
 
               {/* Export / Import row */}
-              <div className="flex items-center justify-between py-2.5 border-b border-border/50">
+              <div className="flex items-center justify-between border-b border-border/50 py-2.5">
                 <p className="text-sm text-foreground">Export or import</p>
                 <div className="flex gap-2">
                   <input
@@ -510,13 +566,34 @@ const App: React.FC = () => {
                     disabled={importing}
                   >
                     {importing ? (
-                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                     ) : (
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                        />
                       </svg>
                     )}
                     <span>Import</span>
@@ -525,16 +602,37 @@ const App: React.FC = () => {
                     size="sm"
                     onClick={handleExport}
                     disabled={exporting}
-                    className="bg-primary-500 hover:bg-primary-600 text-white"
+                    className="bg-primary-500 text-white hover:bg-primary-600"
                   >
                     {exporting ? (
-                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                     ) : (
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
                       </svg>
                     )}
                     <span>Export</span>
@@ -546,14 +644,14 @@ const App: React.FC = () => {
               <div className="flex items-center justify-between py-2.5">
                 <div>
                   <p className="text-sm text-foreground">Delete all sessions</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">This can be undone</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">This can be undone</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearClick}
                   disabled={clearing}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   Reset data
                 </Button>
@@ -561,7 +659,7 @@ const App: React.FC = () => {
             </section>
 
             {/* Footer */}
-            <footer className="text-center pt-2 pb-6">
+            <footer className="pb-6 pt-2 text-center">
               <p className="text-xs text-gray-300 dark:text-gray-600">TabFlow v0.1.1</p>
             </footer>
           </>
@@ -569,8 +667,8 @@ const App: React.FC = () => {
       </main>
 
       {/* Restore Confirmation Dialog - using shadcn AlertDialog */}
-      <AlertDialog 
-        open={showRestoreConfirm && restorePreview !== null} 
+      <AlertDialog
+        open={showRestoreConfirm && restorePreview !== null}
         onOpenChange={(open) => !open && cloudSyncStatus !== "downloading" && handleRestoreCancel()}
       >
         <AlertDialogContent className="max-w-[360px]">
@@ -583,19 +681,24 @@ const App: React.FC = () => {
 
           {/* Preview Card */}
           {restorePreview && (
-            <div className="bg-secondary rounded-xl p-4 text-sm space-y-1">
+            <div className="space-y-1 rounded-xl bg-secondary p-4 text-sm">
               <div className="flex justify-between py-1">
                 <span className="text-muted-foreground">Sessions</span>
-                <span className="text-foreground font-medium">{restorePreview.sessionCount}</span>
+                <span className="font-medium text-foreground">{restorePreview.sessionCount}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-muted-foreground">Tabs</span>
-                <span className="text-foreground font-medium">{restorePreview.totalTabs}</span>
+                <span className="font-medium text-foreground">{restorePreview.totalTabs}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-muted-foreground">Synced</span>
-                <span className="text-foreground font-medium">
-                  {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                <span className="font-medium text-foreground">
+                  {new Date(restorePreview.lastSyncedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
             </div>
@@ -606,8 +709,8 @@ const App: React.FC = () => {
           </p>
 
           <AlertDialogFooter>
-            <AlertDialogCancel 
-              disabled={cloudSyncStatus === "downloading"} 
+            <AlertDialogCancel
+              disabled={cloudSyncStatus === "downloading"}
               onClick={handleRestoreCancel}
             >
               Cancel
@@ -615,12 +718,23 @@ const App: React.FC = () => {
             <AlertDialogAction
               disabled={cloudSyncStatus === "downloading"}
               onClick={handleRestoreConfirm}
-              className="bg-primary-500 hover:bg-primary-600 text-white"
+              className="bg-primary-500 text-white hover:bg-primary-600"
             >
               {cloudSyncStatus === "downloading" && (
-                <svg className="animate-spin h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <svg className="mr-1.5 h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
               )}
               Restore
@@ -644,11 +758,7 @@ const App: React.FC = () => {
 
       {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onDismiss={() => setToast(null)}
-        />
+        <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />
       )}
     </div>
   );

@@ -71,9 +71,7 @@ export async function getAllBackups(): Promise<BackupBlob[]> {
  * @returns Promise resolving to backup, or undefined if not found
  * @throws StorageError if read fails
  */
-export async function getBackup(
-  timestamp: string
-): Promise<BackupBlob | undefined> {
+export async function getBackup(timestamp: string): Promise<BackupBlob | undefined> {
   return withErrorHandling(async () => {
     const db = await getDB();
     const tx = db.transaction("backups", "readonly");
@@ -170,9 +168,7 @@ export async function deleteBackup(timestamp: string): Promise<void> {
  * @returns Promise resolving to number of backups deleted
  * @throws StorageError if prune fails
  */
-export async function pruneOldBackups(
-  keepCount: number = MAX_BACKUPS_RETAINED
-): Promise<number> {
+export async function pruneOldBackups(keepCount: number = MAX_BACKUPS_RETAINED): Promise<number> {
   return withErrorHandling(async () => {
     const db = await getDB();
     const tx = db.transaction("backups", "readwrite");
@@ -274,14 +270,10 @@ export function parseImportData(json: string): BackupBlob {
         throw new Error(`Invalid session at index ${i}: missing or invalid id`);
       }
       if (typeof session.createdAt !== "number") {
-        throw new Error(
-          `Invalid session at index ${i}: missing or invalid createdAt`
-        );
+        throw new Error(`Invalid session at index ${i}: missing or invalid createdAt`);
       }
       if (!Array.isArray(session.groups)) {
-        throw new Error(
-          `Invalid session at index ${i}: groups must be an array`
-        );
+        throw new Error(`Invalid session at index ${i}: groups must be an array`);
       }
     }
 
@@ -306,9 +298,7 @@ export function parseImportData(json: string): BackupBlob {
  * @returns Promise resolving to array of previous sessions (for undo)
  * @throws StorageError if restore fails
  */
-export async function restoreFromBackup(
-  backup: BackupBlob
-): Promise<Session[]> {
+export async function restoreFromBackup(backup: BackupBlob): Promise<Session[]> {
   return withErrorHandling(async () => {
     const db = await getDB();
     const tx = db.transaction("sessions", "readwrite");

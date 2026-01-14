@@ -10,10 +10,7 @@
  * - All scheduled work goes through this module
  */
 
-import {
-  ALARM_HOURLY_BACKUP,
-  BACKUP_INTERVAL_MINUTES,
-} from "@shared/constants";
+import { ALARM_HOURLY_BACKUP, BACKUP_INTERVAL_MINUTES } from "@shared/constants";
 import { createBackup } from "@storage/backups";
 
 // =============================================================================
@@ -39,11 +36,7 @@ export async function setupBackupAlarm(): Promise<void> {
     periodInMinutes: BACKUP_INTERVAL_MINUTES,
   });
 
-  console.log(
-    "[TabFlow] Backup alarm created, interval:",
-    BACKUP_INTERVAL_MINUTES,
-    "minutes"
-  );
+  console.log("[TabFlow] Backup alarm created, interval:", BACKUP_INTERVAL_MINUTES, "minutes");
 }
 
 /**

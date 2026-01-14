@@ -185,4 +185,3 @@ export interface MessageResponseMap {
   [MessageAction.CLOUD_DOWNLOAD_PREVIEW]: CloudDownloadPreviewResponse;
   [MessageAction.CLOUD_APPLY_RESTORE]: CloudApplyRestoreResponse;
 }
-

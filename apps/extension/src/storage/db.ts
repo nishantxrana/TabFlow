@@ -71,9 +71,7 @@ export async function getDB(): Promise<TabFlowDB> {
   try {
     dbInstance = await idbOpenDB<TabFlowDBSchema>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, newVersion, transaction) {
-        console.log(
-          `[TabFlow] Upgrading database from v${oldVersion} to v${newVersion}`
-        );
+        console.log(`[TabFlow] Upgrading database from v${oldVersion} to v${newVersion}`);
 
         // Create sessions store
         if (!db.objectStoreNames.contains("sessions")) {
@@ -106,9 +104,7 @@ export async function getDB(): Promise<TabFlowDB> {
         });
       },
       blocked() {
-        console.warn(
-          "[TabFlow] Database upgrade blocked. Close other tabs using TabFlow."
-        );
+        console.warn("[TabFlow] Database upgrade blocked. Close other tabs using TabFlow.");
       },
       blocking() {
         // Close connection to allow upgrade in another tab
@@ -217,16 +213,9 @@ export async function withErrorHandling<T>(
         );
       }
       if (error.name === "NotFoundError") {
-        throw new StorageError(
-          `Resource not found during ${operationName}`,
-          "NOT_FOUND",
-          error
-        );
+        throw new StorageError(`Resource not found during ${operationName}`, "NOT_FOUND", error);
       }
-      if (
-        error.name === "TransactionInactiveError" ||
-        error.name === "InvalidStateError"
-      ) {
+      if (error.name === "TransactionInactiveError" || error.name === "InvalidStateError") {
         throw new StorageError(
           `Transaction failed during ${operationName}`,
           "TRANSACTION_FAILED",
@@ -237,9 +226,7 @@ export async function withErrorHandling<T>(
 
     // Generic error
     throw new StorageError(
-      `Failed to ${operationName}: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      `Failed to ${operationName}: ${error instanceof Error ? error.message : "Unknown error"}`,
       "UNKNOWN",
       error
     );

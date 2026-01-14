@@ -12,13 +12,7 @@
  */
 
 import type { Session, Group, TabSnapshot } from "@shared/types";
-import {
-  getDB,
-  StorageError,
-  withErrorHandling,
-  generateId,
-  now,
-} from "./db";
+import { getDB, StorageError, withErrorHandling, generateId, now } from "./db";
 
 // =============================================================================
 // Session Read Operations
@@ -146,10 +140,7 @@ export async function saveSession(session: Session): Promise<void> {
  * @returns Promise resolving to the created session
  * @throws StorageError if write fails
  */
-export async function createSession(
-  name: string,
-  tabs: TabSnapshot[]
-): Promise<Session> {
+export async function createSession(name: string, tabs: TabSnapshot[]): Promise<Session> {
   const session: Session = {
     id: generateId(),
     name: name || `Session ${new Date().toLocaleString()}`,
@@ -316,10 +307,7 @@ export async function updateGroupInSession(
     const groupIndex = session.groups.findIndex((g) => g.id === groupId);
     if (groupIndex === -1) {
       await tx.done;
-      throw new StorageError(
-        `Group not found: ${groupId} in session ${sessionId}`,
-        "NOT_FOUND"
-      );
+      throw new StorageError(`Group not found: ${groupId} in session ${sessionId}`, "NOT_FOUND");
     }
 
     session.groups[groupIndex] = {
@@ -342,10 +330,7 @@ export async function updateGroupInSession(
  * @returns Promise resolving to updated session
  * @throws StorageError if session not found
  */
-export async function deleteGroupFromSession(
-  sessionId: string,
-  groupId: string
-): Promise<Session> {
+export async function deleteGroupFromSession(sessionId: string, groupId: string): Promise<Session> {
   return withErrorHandling(async () => {
     const db = await getDB();
     const tx = db.transaction("sessions", "readwrite");
@@ -414,10 +399,7 @@ export async function importSessions(
  * @returns Promise resolving to previous session state (for undo)
  * @throws StorageError if session not found
  */
-export async function replaceSessionGroups(
-  sessionId: string,
-  groups: Group[]
-): Promise<Session> {
+export async function replaceSessionGroups(sessionId: string, groups: Group[]): Promise<Session> {
   return withErrorHandling(async () => {
     const db = await getDB();
     const tx = db.transaction("sessions", "readwrite");

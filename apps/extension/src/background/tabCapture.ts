@@ -109,9 +109,7 @@ export async function getAllTabs(): Promise<TabSnapshot[]> {
  * @param tabId - Chrome tab ID
  * @returns Promise resolving to TabSnapshot or undefined
  */
-export async function getTabById(
-  tabId: number
-): Promise<TabSnapshot | undefined> {
+export async function getTabById(tabId: number): Promise<TabSnapshot | undefined> {
   try {
     const tab = await chrome.tabs.get(tabId);
     return createTabSnapshot(tab);
@@ -163,9 +161,7 @@ export async function restoreTabs(tabs: TabSnapshot[]): Promise<number> {
  * @param groups - Array of groups containing tabs
  * @returns Promise resolving to number of tabs opened
  */
-export async function restoreSessionTabs(
-  groups: { tabs: TabSnapshot[] }[]
-): Promise<number> {
+export async function restoreSessionTabs(groups: { tabs: TabSnapshot[] }[]): Promise<number> {
   let totalOpened = 0;
 
   for (const group of groups) {

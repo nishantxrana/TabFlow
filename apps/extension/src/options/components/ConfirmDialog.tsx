@@ -45,8 +45,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     variant === "danger"
       ? "bg-rose-500 hover:bg-rose-600 text-white"
       : variant === "warning"
-      ? "bg-amber-500 hover:bg-amber-600 text-white"
-      : "bg-primary-500 hover:bg-primary-600 text-white";
+        ? "bg-amber-500 hover:bg-amber-600 text-white"
+        : "bg-primary-500 hover:bg-primary-600 text-white";
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && !loading && onCancel()}>
@@ -59,15 +59,22 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <AlertDialogCancel disabled={loading} onClick={onCancel}>
             {cancelLabel}
           </AlertDialogCancel>
-          <AlertDialogAction
-            disabled={loading}
-            onClick={onConfirm}
-            className={actionClassName}
-          >
+          <AlertDialogAction disabled={loading} onClick={onConfirm} className={actionClassName}>
             {loading && (
-              <svg className="animate-spin h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg className="mr-1.5 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             )}
             {confirmLabel}

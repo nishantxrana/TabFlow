@@ -206,9 +206,7 @@ export function createSaveSessionUndo(sessionId: string): UndoEntry {
 /**
  * Create a typed undo entry for deleting a session.
  */
-export function createDeleteSessionUndo(
-  session: import("@shared/types").Session
-): UndoEntry {
+export function createDeleteSessionUndo(session: import("@shared/types").Session): UndoEntry {
   return {
     type: "DELETE_SESSION",
     timestamp: Date.now(),
@@ -247,9 +245,7 @@ export function createApplyGroupingUndo(
 /**
  * Create a typed undo entry for importing data.
  */
-export function createImportUndo(
-  previousSessions: import("@shared/types").Session[]
-): UndoEntry {
+export function createImportUndo(previousSessions: import("@shared/types").Session[]): UndoEntry {
   return {
     type: "IMPORT",
     timestamp: Date.now(),

@@ -33,21 +33,19 @@ export const GroupView: React.FC<GroupViewProps> = ({ group, searchQuery = "" })
   return (
     <div className="mt-3">
       {/* Group Header - subtle, not demanding */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">{group.name}</span>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+          {group.name}
+        </span>
         <span className="text-[10px] text-stone-400 dark:text-stone-500">
           {filteredTabs.length}
         </span>
       </div>
 
       {/* Tabs List - organized, calm */}
-      <div className="space-y-0.5 ml-0.5 pl-2.5 border-l-2 border-stone-100 dark:border-surface-700">
+      <div className="ml-0.5 space-y-0.5 border-l-2 border-stone-100 pl-2.5 dark:border-surface-700">
         {filteredTabs.map((tab, index) => (
-          <TabItem
-            key={`${tab.url}-${index}`}
-            tab={tab}
-            highlighted={!!searchQuery}
-          />
+          <TabItem key={`${tab.url}-${index}`} tab={tab} highlighted={!!searchQuery} />
         ))}
       </div>
     </div>

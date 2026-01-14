@@ -50,14 +50,24 @@ export const SessionList: React.FC<SessionListProps> = ({
   // Empty state - hopeful, not sad
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-stone-100 to-stone-50 dark:from-surface-800 dark:to-surface-850 flex items-center justify-center">
-          <svg className="w-6 h-6 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-stone-100 to-stone-50 dark:from-surface-800 dark:to-surface-850">
+          <svg
+            className="h-6 w-6 text-stone-300 dark:text-stone-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
           </svg>
         </div>
         <p className="text-sm text-stone-600 dark:text-stone-400">Ready when you are</p>
-        <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5 max-w-[200px] mx-auto">
+        <p className="mx-auto mt-1.5 max-w-[200px] text-xs text-stone-400 dark:text-stone-500">
           Save your open tabs to keep them safe for later
         </p>
       </div>
@@ -67,10 +77,8 @@ export const SessionList: React.FC<SessionListProps> = ({
   // No search results
   if (filteredSessions.length === 0 && searchQuery) {
     return (
-      <div className="text-center py-12">
-        <p className="text-sm text-stone-500 dark:text-stone-400">
-          No matches for "{searchQuery}"
-        </p>
+      <div className="py-12 text-center">
+        <p className="text-sm text-stone-500 dark:text-stone-400">No matches for "{searchQuery}"</p>
       </div>
     );
   }

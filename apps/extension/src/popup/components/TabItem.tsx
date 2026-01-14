@@ -15,18 +15,13 @@ interface TabItemProps {
   highlighted?: boolean;
 }
 
-export const TabItem: React.FC<TabItemProps> = ({
-  tab,
-  highlighted = false,
-}) => {
+export const TabItem: React.FC<TabItemProps> = ({ tab, highlighted = false }) => {
   // Default favicon if none available
-  const faviconUrl =
-    tab.favicon ||
-    `https://www.google.com/s2/favicons?domain=${tab.domain}&sz=32`;
+  const faviconUrl = tab.favicon || `https://www.google.com/s2/favicons?domain=${tab.domain}&sz=32`;
 
   return (
     <div
-      className={`flex items-center gap-2.5 py-1.5 px-2 rounded-lg ${
+      className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${
         highlighted
           ? "bg-amber-50 dark:bg-amber-900/10"
           : "hover:bg-stone-50 dark:hover:bg-surface-800"
@@ -36,7 +31,7 @@ export const TabItem: React.FC<TabItemProps> = ({
       <img
         src={faviconUrl}
         alt=""
-        className="w-4 h-4 flex-shrink-0 rounded"
+        className="h-4 w-4 flex-shrink-0 rounded"
         onError={(e) => {
           // Fallback to generic icon on error
           e.currentTarget.src =
@@ -45,16 +40,11 @@ export const TabItem: React.FC<TabItemProps> = ({
       />
 
       {/* Title and Domain */}
-      <div className="flex-1 min-w-0 leading-snug">
-        <p
-          className="text-[12px] text-stone-600 dark:text-stone-300 truncate"
-          title={tab.title}
-        >
+      <div className="min-w-0 flex-1 leading-snug">
+        <p className="truncate text-[12px] text-stone-600 dark:text-stone-300" title={tab.title}>
           {tab.title}
         </p>
-        <p className="text-[10px] text-stone-400 dark:text-stone-500 truncate">
-          {tab.domain}
-        </p>
+        <p className="truncate text-[10px] text-stone-400 dark:text-stone-500">{tab.domain}</p>
       </div>
     </div>
   );

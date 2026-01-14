@@ -1,20 +1,13 @@
 /**
  * TabFlow – shadcn/ui Components
- * 
+ *
  * Re-export all UI primitives for easy imports
  */
 
-export { Button, buttonVariants } from "./button"
-export type { ButtonProps } from "./button"
+export { Button, buttonVariants } from "./button";
+export type { ButtonProps } from "./button";
 
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "./card"
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card";
 
 export {
   AlertDialog,
@@ -28,11 +21,11 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
-} from "./alert-dialog"
+} from "./alert-dialog";
 
-export { Switch } from "./switch"
+export { Switch } from "./switch";
 
-export { Separator } from "./separator"
+export { Separator } from "./separator";
 
 export {
   Select,
@@ -45,5 +38,4 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
-} from "./select"
-
+} from "./select";

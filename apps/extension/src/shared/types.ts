@@ -157,4 +157,3 @@ export interface BackupBlob {
  * User tier (Free or Pro).
  */
 export type Tier = "free" | "pro";
-

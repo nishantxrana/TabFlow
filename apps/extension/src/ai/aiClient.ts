@@ -16,4 +16,3 @@
 export async function triggerAIGrouping(): Promise<void> {
   throw new Error("AI grouping not implemented (Phase 2)");
 }
-

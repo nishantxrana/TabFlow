@@ -15,19 +15,9 @@ interface ToggleProps {
   label?: string;
 }
 
-export const Toggle: React.FC<ToggleProps> = ({
-  enabled,
-  onChange,
-  disabled = false,
-  label,
-}) => {
+export const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, disabled = false, label }) => {
   return (
-    <Switch
-      checked={enabled}
-      onCheckedChange={onChange}
-      disabled={disabled}
-      aria-label={label}
-    />
+    <Switch checked={enabled} onCheckedChange={onChange} disabled={disabled} aria-label={label} />
   );
 };
 

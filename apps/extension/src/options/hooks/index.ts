@@ -4,4 +4,3 @@
 
 export { sendMessage } from "./useMessage";
 export { useSettings } from "./useSettings";
-
