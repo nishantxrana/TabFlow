@@ -3,6 +3,7 @@
  */
 
 export { ActionBar } from "./ActionBar";
+export { AIGroupingModal } from "./AIGroupingModal";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { ErrorToast } from "./ErrorToast";
 export { GroupView } from "./GroupView";

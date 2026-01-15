@@ -15,6 +15,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { Session } from "@shared/types";
 import { MAX_SESSION_NAME_LENGTH } from "@shared/constants";
 import GroupView from "./GroupView";
+import { suggestSessionName, AIQuotaExceededError } from "../../ai/aiClient";
 
 interface SessionCardProps {
   session: Session;
@@ -43,6 +44,8 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(session.name);
   const [showLimitHint, setShowLimitHint] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiQuotaExceeded, setAiQuotaExceeded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const totalTabs = session.groups.reduce((sum, g) => sum + g.tabs.length, 0);
@@ -117,6 +120,31 @@ export const SessionCard: React.FC<SessionCardProps> = ({
     }
   };
 
+  const handleAiSuggest = async () => {
+    if (aiLoading || aiQuotaExceeded) return;
+
+    setAiLoading(true);
+    try {
+      // Get tabs from session for AI input
+      const tabs = session.groups.flatMap((g) =>
+        g.tabs.map((t) => ({
+          title: t.title,
+          domain: t.domain,
+        }))
+      );
+
+      const result = await suggestSessionName(tabs);
+      setEditValue(result.suggestedName);
+    } catch (error) {
+      if (error instanceof AIQuotaExceededError) {
+        setAiQuotaExceeded(true);
+      }
+      console.error("[SessionCard] AI suggestion failed:", error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const hasMatchingTabs = searchQuery
     ? session.groups.some((group) =>
         group.tabs.some(
@@ -168,7 +196,10 @@ export const SessionCard: React.FC<SessionCardProps> = ({
         {/* Session Content */}
         <div className="min-w-0 flex-1">
           {isEditing ? (
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="relative flex items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+            >
               <input
                 ref={inputRef}
                 type="text"
@@ -176,12 +207,40 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 onChange={handleInputChange}
                 onBlur={handleSave}
                 onKeyDown={handleKeyDown}
-                disabled={renaming}
+                disabled={renaming || aiLoading}
                 maxLength={MAX_SESSION_NAME_LENGTH}
-                className={`w-full rounded-lg border bg-white px-2.5 py-1 text-sm font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:bg-surface-800 dark:text-stone-100 dark:focus:ring-primary-400/30 ${
+                className={`min-w-0 flex-1 rounded-lg border bg-white px-2.5 py-1 text-sm font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:bg-surface-800 dark:text-stone-100 dark:focus:ring-primary-400/30 ${
                   showLimitHint ? "border-amber-400" : "dark:border-surface-600 border-stone-200"
                 }`}
               />
+              {/* AI Suggestion Button */}
+              <button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={aiLoading || aiQuotaExceeded || renaming}
+                title={aiQuotaExceeded ? "AI suggestion limit reached" : "Suggest name with AI"}
+                className="flex-shrink-0 rounded-lg p-1.5 text-stone-400 transition-all hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:bg-primary-900/20 dark:hover:text-primary-400"
+              >
+                {aiLoading ? (
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                ) : (
+                  <span className="text-sm">✨</span>
+                )}
+              </button>
               {showLimitHint && (
                 <span className="absolute -bottom-5 left-0 text-[10px] text-amber-600 dark:text-amber-500">
                   Max {MAX_SESSION_NAME_LENGTH} characters

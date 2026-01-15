@@ -20,8 +20,11 @@ export const MAX_TABS_FREE = 100;
 /** Maximum tabs allowed for pro tier */
 export const MAX_TABS_PRO = Infinity;
 
-/** Maximum tabs per AI grouping request */
-export const MAX_TABS_PER_AI_REQUEST = 40;
+/** Maximum tabs for AI session naming */
+export const MAX_TABS_FOR_AI_NAMING = 100;
+
+/** Maximum tabs for AI grouping */
+export const MAX_TABS_FOR_AI_GROUPING = 50;
 
 /** Maximum undo history depth */
 export const MAX_UNDO_DEPTH = 10;
@@ -58,8 +61,8 @@ export const POPUP_MAX_HEIGHT_PX = 600;
 /** Error toast auto-dismiss time (ms) */
 export const ERROR_TOAST_DURATION_MS = 5000;
 
-/** Maximum session name length (characters) */
-export const MAX_SESSION_NAME_LENGTH = 40;
+/** Maximum session name length (characters) - matches AI output limit */
+export const MAX_SESSION_NAME_LENGTH = 50;
 
 // =============================================================================
 // Alarm Names

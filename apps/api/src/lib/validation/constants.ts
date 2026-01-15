@@ -10,7 +10,7 @@
 // =============================================================================
 
 /** Maximum session name length (characters) - must match frontend */
-export const MAX_SESSION_NAME_LENGTH = 40;
+export const MAX_SESSION_NAME_LENGTH = 50;
 
 /** Minimum session name length (characters) */
 export const MIN_SESSION_NAME_LENGTH = 1;

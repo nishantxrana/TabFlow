@@ -10,6 +10,7 @@ import type { Session } from "@shared/types";
 import { MessageAction } from "@shared/messages";
 import { sendMessage } from "./hooks/useMessage";
 import { useSessions } from "./hooks/useSessions";
+import type { AITabInput } from "../ai/aiClient";
 import {
   ActionBar,
   SearchBar,
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   // Modal state
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const [currentTabs, setCurrentTabs] = useState<AITabInput[]>([]);
 
   // Toast state
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,21 @@ const App: React.FC = () => {
   }, []);
 
   // Handle save session (with modal)
-  const handleSaveClick = useCallback(() => {
+  const handleSaveClick = useCallback(async () => {
+    // Fetch current tabs for AI naming (runs in background)
+    try {
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      const tabInputs: AITabInput[] = tabs
+        .filter((t) => t.url && t.title)
+        .map((t) => ({
+          title: t.title || "",
+          domain: new URL(t.url!).hostname,
+        }));
+      setCurrentTabs(tabInputs);
+    } catch {
+      // Non-fatal: AI naming just won't be available
+      setCurrentTabs([]);
+    }
     setShowSaveModal(true);
   }, []);
 
@@ -323,6 +339,7 @@ const App: React.FC = () => {
         onClose={() => setShowSaveModal(false)}
         onSave={handleSave}
         saving={saving}
+        tabs={currentTabs}
       />
 
       {/* Delete Confirmation - Reassuring, not alarming */}

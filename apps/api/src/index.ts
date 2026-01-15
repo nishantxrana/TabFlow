@@ -11,8 +11,7 @@
 import "./functions/authGoogle";
 import "./functions/syncUpload";
 import "./functions/syncDownload";
-
-// Future functions will be imported here:
-// import "./functions/aiGroup";
+import "./functions/aiSessionName";
+import "./functions/aiGroupTabs";
 
 console.log("[TabFlow API] Functions registered");
