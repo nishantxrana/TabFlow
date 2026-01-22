@@ -43,6 +43,7 @@ jobs:
               run: npm run build
               env:
                   VITE_CLOUD_API_URL: https://example.com
+                  VITE_ENCRYPTION_KEY: your-strong-encryption-key-here
 
     api-validate:
         runs-on: ubuntu-latest

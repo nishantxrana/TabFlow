@@ -12,7 +12,7 @@
  * TODO: In production, derive key from user's Google account or passphrase.
  */
 
-import { ENCRYPTION_SALT } from "@shared/constants";
+import { ENCRYPTION_SALT, ENCRYPTION_KEY_MATERIAL } from "@shared/constants";
 
 // =============================================================================
 // Constants
@@ -26,16 +26,10 @@ const ALGORITHM = "AES-GCM";
 const KEY_LENGTH = 256;
 const IV_LENGTH = 12; // 96 bits for AES-GCM
 
-/**
- * Static encryption key for MVP.
- * TODO: Replace with user-derived key in production.
- *
- * In production, this should be:
- * - Derived from user's passphrase, OR
- * - Derived from Google account token, OR
- * - Stored securely in chrome.storage.local
- */
-const STATIC_KEY_MATERIAL = "tabflow-mvp-encryption-key-v1";
+// Validate encryption key at module load
+if (!ENCRYPTION_KEY_MATERIAL) {
+  console.error("[Encryption] VITE_ENCRYPTION_KEY is not set!");
+}
 
 // =============================================================================
 // Key Derivation
@@ -83,10 +77,14 @@ let cachedKey: CryptoKey | null = null;
 
 /**
  * Get or create the encryption key.
+ * Uses the key material from environment variable.
  */
 async function getKey(): Promise<CryptoKey> {
   if (!cachedKey) {
-    cachedKey = await deriveKey(STATIC_KEY_MATERIAL);
+    if (!ENCRYPTION_KEY_MATERIAL) {
+      throw new Error("Encryption key not configured. Set VITE_ENCRYPTION_KEY.");
+    }
+    cachedKey = await deriveKey(ENCRYPTION_KEY_MATERIAL);
   }
   return cachedKey;
 }
