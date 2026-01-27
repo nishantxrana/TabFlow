@@ -71,7 +71,7 @@ export const ALARM_HOURLY_BACKUP = "hourlyBackup";
 // Cloud Sync Configuration
 // =============================================================================
 
-export const CLOUD_API_BASE_URL = import.meta.env.VITE_CLOUD_API_URL;
+export const CLOUD_API_BASE_URL = import.meta.env.VITE_CLOUD_API_URL || "http://localhost:3000";
 
 /** Cloud sync schema version */
 export const CLOUD_SYNC_SCHEMA_VERSION = 1;
