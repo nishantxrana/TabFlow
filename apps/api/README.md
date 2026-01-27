@@ -8,10 +8,10 @@
 
 The TabFlow API provides a minimal, privacy-first backend responsible for:
 
-* **Google Authentication** – Verifying Google ID tokens
-* **Stable User IDs** – Generating deterministic, privacy-safe user identifiers
-* **Cloud Sync Upload** – Storing encrypted session data
-* **Cloud Sync Download** – Retrieving encrypted session data
+- **Google Authentication** – Verifying Google ID tokens
+- **Stable User IDs** – Generating deterministic, privacy-safe user identifiers
+- **Cloud Sync Upload** – Storing encrypted session data
+- **Cloud Sync Download** – Retrieving encrypted session data
 
 The API never sees or processes plaintext user data. All session payloads are encrypted client-side and treated as opaque blobs.
 
@@ -19,10 +19,10 @@ The API never sees or processes plaintext user data. All session payloads are en
 
 ## Tech Stack
 
-* **Runtime:** Azure Functions v4 (Node.js 18+ / 22 recommended)
-* **Language:** TypeScript
-* **Authentication:** Google OAuth (google-auth-library)
-* **Storage:** Azure Blob Storage
+- **Runtime:** Azure Functions v4 (Node.js 18+ / 22 recommended)
+- **Language:** TypeScript
+- **Authentication:** Google OAuth (google-auth-library)
+- **Storage:** Azure Blob Storage
 
 ---
 
@@ -50,9 +50,9 @@ The API never sees or processes plaintext user data. All session payloads are en
 
 ### Prerequisites
 
-* Node.js 18+ (22 recommended)
-* Azure Functions Core Tools v4
-* Azurite (or Azure Storage account)
+- Node.js 18+ (22 recommended)
+- Azure Functions Core Tools v4
+- Azurite (or Azure Storage account)
 
 ---
 
@@ -66,8 +66,8 @@ cp local.settings.json.example local.settings.json
 
 Edit `local.settings.json` and configure:
 
-* `GOOGLE_CLIENT_ID`
-* `STORAGE_CONNECTION_STRING`
+- `GOOGLE_CLIENT_ID`
+- `STORAGE_CONNECTION_STRING`
 
 ---
 
@@ -239,12 +239,12 @@ Each user has exactly one encrypted blob.
 
 ## Security Guarantees
 
-* ID tokens are never logged
-* Tokens are verified server-side with Google
-* User IDs are SHA-256 hashed
-* Payloads are opaque to the server
-* Secrets are excluded from logs
-* CORS restricted to extension origin in production
+- ID tokens are never logged
+- Tokens are verified server-side with Google
+- User IDs are SHA-256 hashed
+- Payloads are opaque to the server
+- Secrets are excluded from logs
+- CORS restricted to extension origin in production
 
 ---
 
@@ -269,7 +269,7 @@ Push to `main` triggers automatic deployment.
 
 Required secret:
 
-* `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`
+- `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`
 
 ---
 
