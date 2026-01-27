@@ -174,6 +174,7 @@ Response:
 | `BLOB_CONTAINER_NAME`  | Blob container name   | `tabflow-sync` |
 | `DEV_MODE_ENABLED`     | Disable auth locally  | `false`        |
 | `CORS_ALLOWED_ORIGINS` | Extra allowed origins | –              |
+| `AZURE_FUNCTIONS_ENVIRONMENT` | Azure Functions environment (Development, Staging, Production) | –              |
 
 ---
 
