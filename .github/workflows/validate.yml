@@ -4,9 +4,9 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "apps/extension/**"
-      - "apps/api/**"
+    # paths:
+    #   - "apps/extension/**"
+    #   - "apps/api/**"
 
 jobs:
   extension-validate:
