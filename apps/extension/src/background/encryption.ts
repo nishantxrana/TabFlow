@@ -7,9 +7,7 @@
  * Security:
  * - All encryption happens client-side
  * - Server never sees plaintext data
- * - Key derived from user-controlled secret (for now, a static key)
- *
- * TODO: In production, derive key from user's Google account or passphrase.
+ * - Key loaded from environment variable (VITE_ENCRYPTION_KEY)
  */
 
 import { ENCRYPTION_SALT, ENCRYPTION_KEY_MATERIAL } from "@shared/constants";
