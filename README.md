@@ -1,36 +1,64 @@
 # TabFlow
 
-A local-first tab session manager for Chrome with optional encrypted cloud sync.
+> Local‑first tab session manager for Chrome with optional end‑to‑end encrypted cloud sync.
+
+[![Build Extension](https://github.com/nishantxrana/TabFlow/actions/workflows/build-extension.yml/badge.svg)](https://github.com/nishantxrana/TabFlow/actions/workflows/build-extension.yml)
+[![Deploy API](https://github.com/nishantxrana/TabFlow/actions/workflows/deploy-api.yml/badge.svg)](https://github.com/nishantxrana/TabFlow/actions/workflows/deploy-api.yml)
+[![Validate Code](https://github.com/nishantxrana/TabFlow/actions/workflows/validate.yml/badge.svg)](https://github.com/nishantxrana/TabFlow/actions/workflows/validate.yml)
 
 ---
 
-## What TabFlow Is
+## Overview
 
-TabFlow is a Chrome extension (Manifest V3) that lets you save groups of open tabs as named sessions and restore them later. It prioritizes local storage and user control.
+TabFlow is a privacy‑focused Chrome extension that lets you save groups of open tabs as **named sessions** and restore them later with one click.
 
-**What TabFlow is not:**
+It is built on three principles:
 
-- Not a bookmark manager
-- Not an automatic background sync tool
-- Not a cross-browser extension (Chrome only, currently)
-- Not a team/collaboration tool
+* **Local‑first** – your data stays on your device by default
+* **User‑controlled sync** – optional, manual cloud sync
+* **End‑to‑end encryption** – the server never sees plaintext
 
 ---
 
-## Current Features
+## Features
 
-These features are implemented and available today:
+### Core
 
-- **Save sessions** — Capture open tabs as a named session
-- **Restore sessions** — Reopen all tabs from a saved session
-- **Rename sessions** — Edit session names after creation
-- **Search tabs** — Find tabs across all sessions
-- **Undo system** — Revert recent actions
-- **Copy links** — Copy all URLs from a session
-- **Export/import** — Backup and restore data as JSON
-- **Auto-backup** — Periodic local backups via `chrome.alarms`
-- **Cloud sync (optional)** — Manual, encrypted sync to the cloud
-- **Restore preview** — Preview cloud data before overwriting local sessions
+* Save open tabs as named sessions
+* Restore sessions instantly
+* Rename and delete sessions
+* Full‑text search across all saved tabs
+* Copy all links from a session
+* Undo recent actions
+
+### Backup & Sync
+
+* Export/import sessions as JSON
+* Automatic local backups via `chrome.alarms`
+* Optional manual cloud sync (encrypted)
+* Preview cloud data before restoring
+
+### Privacy
+
+* No analytics
+* No tracking
+* No ads
+* No background sync
+
+---
+
+## What TabFlow Is Not
+
+* ❌ Bookmark manager
+* ❌ Automatic background sync tool
+* ❌ Cross‑browser extension (Chrome only)
+* ❌ Collaboration or team product
+
+---
+
+## Screenshots
+
+> *Add screenshots or GIFs here to showcase the popup UI, session list, and restore flow.*
 
 ---
 
@@ -38,145 +66,239 @@ These features are implemented and available today:
 
 TabFlow is a monorepo with two packages:
 
-| Package          | Description                            |
-| ---------------- | -------------------------------------- |
-| `apps/extension` | Chrome Extension (Manifest V3)         |
-| `apps/api`       | Azure Functions backend for cloud sync |
-
-### Extension
-
-- **Language:** TypeScript
-- **UI:** React 18 + Tailwind CSS
-- **Build:** Vite + CRXJS
-- **Storage:** IndexedDB (sessions), chrome.storage.local (settings)
-
-### Backend
-
-- **Runtime:** Azure Functions v4 (Node.js 18)
-- **Language:** TypeScript
-- **Storage:** Azure Blob Storage (encrypted blobs only)
-
----
-
-## Security and Privacy
-
-TabFlow is designed with privacy as a core principle:
-
-| Principle              | Implementation                                   |
-| ---------------------- | ------------------------------------------------ |
-| Local-first            | All data stored locally by default               |
-| No background sync     | Cloud sync is manual and user-initiated          |
-| Client-side encryption | Data encrypted before leaving the device         |
-| No analytics           | No telemetry, tracking, or usage data collection |
-| No ads                 | No advertising of any kind                       |
-| No data selling        | User data is never sold or shared                |
-| No remote code         | All code bundled in extension package            |
-
-See [privacy.md](privacy.md) for the full privacy policy.
-
----
-
-## Authentication
-
-Cloud sync uses Google authentication via Chrome's `chrome.identity` API.
-
-- Works only in Chrome (not Chromium-based browsers without Google integration)
-- Tokens are short-lived and not stored persistently
-- Email is used only to associate cloud data with the user
-
-**Future:** Magic link authentication for non-Chrome browsers is planned but not yet implemented.
-
----
-
-## Development Setup
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-- Azure Functions Core Tools v4 (for backend development)
-
-### Install
-
-```bash
-npm run install:all
-```
-
-### Extension
-
-```bash
-# Development with hot reload
-npm run extension:dev
-
-# Production build
-npm run extension:build
-```
-
-Load in Chrome:
-
-1. Go to `chrome://extensions`
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select `apps/extension/dist/`
-
-### Backend
-
-```bash
-# Build
-npm run api:build
-
-# Start local server
-npm run api:start
-```
-
-Local API runs at `http://localhost:7071`
-
----
-
-## Project Structure
+| Package          | Description                                |
+| ---------------- | ------------------------------------------ |
+| `apps/extension` | Chrome extension (Manifest V3)             |
+| `apps/api`       | Azure Functions backend for encrypted sync |
 
 ```
 tabflow/
 ├── apps/
-│   ├── extension/          # Chrome Extension
-│   │   ├── src/
-│   │   │   ├── background/ # Service worker
-│   │   │   ├── popup/      # Popup UI (React)
-│   │   │   ├── options/    # Options page (React)
-│   │   │   ├── storage/    # IndexedDB layer
-│   │   │   └── shared/     # Types, constants
-│   │   └── dist/           # Build output
-│   │
-│   └── api/                # Azure Functions
-│       ├── src/
-│       │   ├── functions/  # HTTP endpoints
-│       │   └── lib/        # Shared utilities
-│       └── package.json
-│
-├── docs/                   # Documentation
-├── privacy.md              # Privacy policy
-└── README.md
+│   ├── extension/
+│   └── api/
+├── docs/
+├── .github/workflows/
+└── package.json
 ```
 
 ---
 
-## Project Status
+## Tech Stack
 
-| Milestone                      | Status         |
-| ------------------------------ | -------------- |
-| Local session management       | ✅ Complete    |
-| Cloud sync (manual, encrypted) | ✅ Complete    |
-| Google authentication          | ✅ Complete    |
-| Chrome Web Store               | Unlisted (MVP) |
+### Extension
 
-### Planned (Not Yet Implemented)
+* TypeScript
+* React 18
+* Tailwind CSS
+* Vite + CRXJS
+* IndexedDB (sessions)
+* `chrome.storage.local` (settings)
 
-- Magic link authentication for non-Chrome browsers
-- AI-powered tab grouping
-- Monetization / Pro tier
+### Backend
+
+* Azure Functions v4 (Node.js 18+)
+* TypeScript
+* Azure Blob Storage (encrypted blobs only)
+
+---
+
+## Security Model
+
+| Principle              | Implementation                         |
+| ---------------------- | -------------------------------------- |
+| Local‑first            | All sessions stored locally by default |
+| Manual sync            | User‑initiated only                    |
+| Client‑side encryption | AES‑256‑GCM                            |
+| Zero knowledge server  | Server stores only encrypted blobs     |
+| No analytics           | No telemetry or tracking               |
+
+### Encryption Details
+
+* Algorithm: **AES‑256‑GCM**
+* Key derivation: **PBKDF2 (100,000 iterations)**
+* Encryption happens **inside the extension**
+
+See [`privacy.md`](privacy.md) for full policy.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+* Node.js 18+ (22 recommended)
+* npm 9+
+
+---
+
+### Install
+
+```bash
+git clone https://github.com/nishantxrana/TabFlow.git
+cd TabFlow
+npm run install:all
+```
+
+---
+
+## Development
+
+### Extension
+
+```bash
+cd apps/extension
+cp .env.example .env.development
+npm run extension:dev
+```
+
+Build production bundle:
+
+```bash
+npm run extension:build
+```
+
+Load into Chrome:
+
+1. Open `chrome://extensions`
+2. Enable **Developer Mode**
+3. Click **Load unpacked**
+4. Select `apps/extension/dist`
+
+---
+
+### Backend (Optional – for cloud sync)
+
+#### Prerequisites
+
+* Azure Functions Core Tools v4
+* Azurite
+
+```bash
+cd apps/api
+cp local.settings.json.example local.settings.json
+npm run api:build
+npm run api:start
+```
+
+API runs at: `http://localhost:7071`
+
+---
+
+## Environment Variables
+
+### Extension (build‑time)
+
+| Variable              | Description    |
+| --------------------- | -------------- |
+| `VITE_CLOUD_API_URL`  | API base URL   |
+| `VITE_ENCRYPTION_KEY` | Encryption key |
+
+Generate key:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### API (runtime)
+
+| Variable                    | Description     |
+| --------------------------- | --------------- |
+| `GOOGLE_CLIENT_ID`          | OAuth client ID |
+| `STORAGE_CONNECTION_STRING` | Azure storage   |
+| `BLOB_CONTAINER_NAME`       | Optional        |
+| `DEV_MODE_ENABLED`          | Optional        |
+
+---
+
+## API Endpoints
+
+| Method | Endpoint             | Description             |
+| ------ | -------------------- | ----------------------- |
+| POST   | `/api/auth/google`   | Verify token            |
+| POST   | `/api/sync/upload`   | Upload encrypted data   |
+| GET    | `/api/sync/download` | Download encrypted data |
+
+---
+
+## Available Commands
+
+### Root
+
+| Command               | Description      |
+| --------------------- | ---------------- |
+| `npm run install:all` | Install all deps |
+| `npm run build:all`   | Build everything |
+| `npm run format`      | Format code      |
+
+### Extension
+
+| Command         | Description      |
+| --------------- | ---------------- |
+| `npm run dev`   | Watch mode       |
+| `npm run build` | Production build |
+| `npm run lint`  | Lint             |
+
+### API
+
+| Command         | Description |
+| --------------- | ----------- |
+| `npm run build` | Compile     |
+| `npm run start` | Start host  |
+
+---
+
+## CI / CD
+
+GitHub Actions:
+
+* `validate.yml` – PR validation
+* `build-extension.yml` – extension build
+* `deploy-api.yml` – Azure deploy
+
+---
+
+## Roadmap
+
+* Magic‑link authentication
+* AI‑powered tab grouping
+* All browser support
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+```bash
+git checkout -b feature/my-feature
+npm run format && npm run build:all
+git commit -m "feat: add feature"
+git push origin feature/my-feature
+```
+
+Open a PR 🚀
 
 ---
 
 ## License
 
-MIT
+MIT – see [`LICENSE`](LICENSE)
+
+---
+
+## Author
+
+**Nishant Rana**
+GitHub: [@nishantxrana](https://github.com/nishantxrana)
+
+---
+
+## Support
+
+If you find this project useful:
+
+* ⭐ Star the repo
+* 🐞 Report issues
+* 💡 Suggest features
+
+---
