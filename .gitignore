@@ -58,3 +58,4 @@ __blobstorage__/
 azurite/
 .azurite/
 AzuriteConfig
+__*
