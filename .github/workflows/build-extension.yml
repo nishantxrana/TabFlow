@@ -38,6 +38,7 @@ jobs:
         run: npm run build
         env:
           VITE_CLOUD_API_URL: ${{ vars.VITE_CLOUD_API_URL }}
+          VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY }}
 
       - name: Generate artifact name
         id: meta
