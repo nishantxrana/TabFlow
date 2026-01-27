@@ -1,71 +1,71 @@
 name: Validate Code
 
 on:
-    pull_request:
-        branches:
-            - main
-        paths:
-            - "apps/extension/**"
-            - "apps/api/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/extension/**"
+      - "apps/api/**"
 
 jobs:
-    extension-validate:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  extension-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22.x"
-                  cache: "npm"
-                  cache-dependency-path: "apps/extension/package-lock.json"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: "apps/extension/package-lock.json"
 
-            - name: Install dependencies
-              working-directory: apps/extension
-              run: npm ci
+      - name: Install dependencies
+        working-directory: apps/extension
+        run: npm ci
 
-            - name: Run format check
-              working-directory: apps/extension
-              run: npm run format:check
+      - name: Run format check
+        working-directory: apps/extension
+        run: npm run format:check
 
-            - name: Run lint
-              working-directory: apps/extension
-              run: npm run lint
+      - name: Run lint
+        working-directory: apps/extension
+        run: npm run lint
 
-            - name: Run type check
-              working-directory: apps/extension
-              run: npm run type-check
+      - name: Run type check
+        working-directory: apps/extension
+        run: npm run type-check
 
-            - name: Run build
-              working-directory: apps/extension
-              run: npm run build
-              env:
-                  VITE_CLOUD_API_URL: https://example.com
-                  VITE_ENCRYPTION_KEY: your-strong-encryption-key-here
+      - name: Run build
+        working-directory: apps/extension
+        run: npm run build
+        env:
+          VITE_CLOUD_API_URL: https://example.com
+          VITE_ENCRYPTION_KEY: your-strong-encryption-key-here
 
-    api-validate:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  api-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22.x"
-                  cache: "npm"
-                  cache-dependency-path: "apps/api/package-lock.json"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: "apps/api/package-lock.json"
 
-            - name: Install dependencies
-              working-directory: apps/api
-              run: npm ci
+      - name: Install dependencies
+        working-directory: apps/api
+        run: npm ci
 
-            - name: Run format check
-              working-directory: apps/api
-              run: npm run format:check
+      - name: Run format check
+        working-directory: apps/api
+        run: npm run format:check
 
-            - name: Run build
-              working-directory: apps/api
-              run: npm run build
+      - name: Run build
+        working-directory: apps/api
+        run: npm run build
